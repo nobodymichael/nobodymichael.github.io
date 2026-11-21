@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#FBF9F4">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23191919'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%23F5322C'/%3E%3C/svg%3E">
+<title>qrgen | nobodymichael</title>
+<link rel="stylesheet" href="../style.css">
+<script src="../site.js"></script>
+</head>
+<body>
+<div class="wrap">
+<header><a class="brand" href="../">nobodymichael</a></header>
+<main>
+<h1>qrgen</h1>
+<p class="lead">Kody QR, Aztec, Data Matrix i kody kreskowe. Wybierz format i wpisz treść.</p>
+<div class="qrgrid">
+<div>
+<div class="f"><p class="field">Format</p><div id="fmt"></div></div>
+<div class="f" id="typebox"><p class="field">Typ treści</p><div id="type"></div></div>
+<div id="fields"></div>
+<div class="opts">
+<div id="ecbox"><p class="field">Korekcja błędów</p><div id="ec"></div></div>
+<div><p class="field">Kolor kodu</p><div id="ink"></div></div>
+<div><p class="field">Tło</p><div id="paper"></div></div>
+</div>
+<p class="status" id="status" aria-live="polite"></p>
+<div class="row">
+<button class="btn" id="png" disabled>Pobierz PNG</button>
+<button class="btn ghost" id="svg" disabled>Pobierz SVG</button>
+</div>
+<p class="hint" id="hint"></p>
+</div>
+<div class="qr" id="qr">Wpisz coś, a kod pojawi się tutaj.</div>
+</div>
+</main>
+</div>
+<footer class="wrap">Kod powstaje lokalnie w przeglądarce. Nic nie jest wysyłane.</footer>
+<script src="../qrcode.js"></script>
+<script>
+(function(){
+  var Q=4, $=function(i){return document.getElementById(i)};
+  qrcode.stringToBytes=qrcode.stringToBytesFuncs["UTF-8"];
+  var ov=null; function C(){return ov||{i:ink.get(),p:paper.get()};}
+  var fields=$("fields"), box=$("qr"), status=$("status"), hint=$("hint"),
+      bPng=$("png"), bSvg=$("svg"), current=null, animate=true, FG={};
+
+  /* grupa przycisków (radio) */
+  function Group(id,cb){
+    var el=$(id), n=0; el.className="chips"; el.setAttribute("role","radiogroup");
+    return {
+      add:function(list,def){list.forEach(function(o){
+        var i=id+"_"+(n++), inp=document.createElement("input"), lb=document.createElement("label");
+        inp.type="radio"; inp.name=id; inp.id=i; inp.value=o[0]; if(o[0]===def) inp.checked=true;
+        lb.htmlFor=i; if(o[3]) lb.innerHTML='<span class="th">'+o[3]+'</span><span>'+o[1]+'</span>'; else lb.textContent=o[1];
+        if(o[2]){lb.className="sw"; lb.style.setProperty("--c",o[2]); lb.title=o[1];}
+        inp.onchange=cb; el.appendChild(inp); el.appendChild(lb);
+      });},
+      get:function(){var c=el.querySelector("input:checked"); return c?c.value:"";}
+    };
+  }
+
+  var NATIVE=[["qr","QR"],["code128","Code 128"],["ean13","EAN-13"]];
+  var BW=[["azteccode","Aztec"],["datamatrix","Data Matrix"],["pdf417","PDF417"],["microqrcode","Micro QR"],["code39","Code 39"]];
+  function two(f){return f==="qr"||f==="azteccode"||f==="datamatrix"||f==="pdf417"||f==="microqrcode";}
+
+  var TYPES={
+    text:{n:"Tekst lub link",f:[["t","Tekst lub link","area"]]},
+    wifi:{n:"Wi-Fi",f:[["s","Nazwa sieci"],["p","Hasło"],["e","Zabezpieczenie","sel",["WPA","WEP","nopass"]]]},
+    email:{n:"E-mail",f:[["to","Adres"],["sub","Temat"],["body","Treść","area"]]},
+    sms:{n:"SMS",f:[["num","Numer"],["msg","Wiadomość","area"]]},
+    tel:{n:"Telefon",f:[["num","Numer"]]},
+    geo:{n:"Lokalizacja",f:[["la","Szerokość geogr."],["lo","Długość geogr."]]},
+    vcard:{n:"Wizytówka",f:[["nm","Imię i nazwisko"],["tel","Telefon"],["em","E-mail"],["org","Firma"]]}
+  };
+
+  var fmt=Group("fmt",layout), type=Group("type",layout), ec=Group("ec",render),
+      ink=Group("ink",render), paper=Group("paper",render);
+  type.add(Object.keys(TYPES).map(function(k){return [k,TYPES[k].n];}),"text");
+  ec.add([["L","L, 7%"],["M","M, 15%"],["Q","Q, 25%"],["H","H, 30%"]],"M");
+  ink.add([["#191919","Czarny","#191919"],["#F5322C","Czerwony","#F5322C"]],"#191919");
+  paper.add([["#FBF9F4","Papier","#FBF9F4"],["#FFFFFF","Biały","#FFFFFF"]],"#FBF9F4");
+
+  /* blokada znaków */
+  var ONLY={num:/[^\d+\s()\-]/g, la:/[^\d.\-]/g, lo:/[^\d.\-]/g};
+  function rule(k){
+    var f=fmt.get();
+    if(k==="t"){
+      if(f==="ean13") return {bad:/\D/g,max:13,mode:"numeric",ph:"12 lub 13 cyfr"};
+      if(f==="code39") return {bad:/[^A-Z0-9 \-.$\/+%]/g,up:1,ph:"A-Z, 0-9 i - . $ / + %"};
+      if(f==="code128") return {bad:/[^\x20-\x7e]/g};
+      return null;
+    }
+    return ONLY[k]?{bad:ONLY[k],mode:k==="num"?"tel":"decimal",dot:k!=="num"}:null;
+  }
+  function sanitize(el,r){
+    var v=el.value; if(r.up) v=v.toUpperCase(); if(r.dot) v=v.replace(/,/g,".");
+    v=v.replace(r.bad,""); if(r.max) v=v.slice(0,r.max);
+    if(v!==el.value){el.value=v; el.classList.remove("deny"); void el.offsetWidth; el.classList.add("deny");}
+  }
+
+  /* treść */
+  var DOMAIN=/^(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}|localhost|\d{1,3}(?:\.\d{1,3}){3})(?::\d{1,5})?(?:[\/?#]\S*)?$/i;
+  function esc(s){return s.replace(/([\\;,:"])/g,"\\$1");}
+  function normalize(raw){
+    var t=raw.trim();
+    if(!t) return {text:"",kind:"empty"};
+    if(/\s/.test(t)) return {text:raw,kind:"text"};
+    if(/^https?:\/\//i.test(t)) return {text:t,kind:"link"};
+    if(DOMAIN.test(t)) return {text:"https://"+t,kind:"linkAdded"};
+    return {text:t,kind:"text"};
+  }
+  var ENC={
+    wifi:function(v){return v.s?"WIFI:T:"+v.e+";S:"+esc(v.s)+";P:"+esc(v.p)+";;":"";},
+    email:function(v){
+      if(!v.to) return ""; var p=[];
+      if(v.sub) p.push("subject="+encodeURIComponent(v.sub));
+      if(v.body) p.push("body="+encodeURIComponent(v.body));
+      return "mailto:"+v.to+(p.length?"?"+p.join("&"):"");
+    },
+    sms:function(v){return v.num?"SMSTO:"+v.num.replace(/\s/g,"")+":"+v.msg:"";},
+    tel:function(v){return v.num?"tel:"+v.num.replace(/\s/g,""):"";},
+    geo:function(v){return v.la&&v.lo?"geo:"+v.la+","+v.lo:"";},
+    vcard:function(v){
+      if(!(v.nm||v.tel||v.em||v.org)) return "";
+      return ["BEGIN:VCARD","VERSION:3.0","FN:"+v.nm,v.tel&&"TEL:"+v.tel,v.em&&"EMAIL:"+v.em,v.org&&"ORG:"+v.org,"END:VCARD"].filter(Boolean).join("\n");
+    }
+  };
+  function curType(){return two(fmt.get())?type.get():"text";}
+  function compose(){
+    var t=curType(), v={};
+    TYPES[t].f.forEach(function(x){v[x[0]]=FG[x[0]]?FG[x[0]].get():$("f_"+x[0]).value;});
+    if(t==="text") return two(fmt.get())?normalize(v.t):{text:v.t,kind:v.t?"text":"empty"};
+    var s=ENC[t](v); return {text:s,kind:s?"text":"empty"};
+  }
+
+  /* SVG */
+  function wrap(w,h,d,extra){
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'" shape-rendering="crispEdges"><rect width="'+w+'" height="'+h+'" fill="'+C().p+'"/><path d="'+d+'" fill="'+C().i+'"/>'+(extra||"")+'</svg>';
+  }
+  function qrSvg(text){
+    var qr=qrcode(0,ec.get()); qr.addData(text); qr.make();
+    var n=qr.getModuleCount(), d="";
+    for(var r=0;r<n;r++) for(var c=0;c<n;c++) if(qr.isDark(r,c)) d+="M"+(c+Q)+" "+(r+Q)+"h1v1h-1z";
+    return wrap(n+Q*2,n+Q*2,d);
+  }
+  function barSvg(bits,label){
+    var qz=10, top=6, bh=56, d="", i=0;
+    while(i<bits.length){
+      if(bits[i]==="1"){var j=i; while(bits[j]==="1") j++; d+="M"+(qz+i)+" "+top+"h"+(j-i)+"v"+bh+"h-"+(j-i)+"z"; i=j;} else i++;
+    }
+    var w=bits.length+qz*2, h=top+bh+16;
+    var tx='<text x="'+w/2+'" y="'+(top+bh+12)+'" text-anchor="middle" font-family="monospace" font-size="9" fill="'+C().i+'" shape-rendering="auto">'+label.replace(/&/g,"&amp;").replace(/</g,"&lt;")+'</text>';
+    return wrap(w,h,d,tx);
+  }
+  var C128="212222 222122 222221 121223 121322 131222 122213 122312 132212 221213 221312 231212 112232 122132 122231 113222 123122 123221 223211 221132 221231 213212 223112 312131 311222 321122 321221 312212 322112 322211 212123 212321 232121 111323 131123 131321 112313 132113 132311 211313 231113 231311 112133 112331 132131 113123 113321 133121 313121 211331 231131 213113 213311 213131 311123 311321 331121 312113 312311 332111 314111 221411 431111 111224 111422 121124 121421 141122 141221 112214 112412 122114 122411 142112 142211 241211 221114 413111 241112 134111 111242 121142 121241 114212 124112 124211 411212 421112 421211 212141 214121 412121 111143 111341 131141 114113 114311 411113 411311 113141 114131 311141 411131 211412 211214 211232 2331112".split(" ");
+  function code128(t){
+    if(!/^[\x20-\x7e]+$/.test(t)) throw {pl:"Code 128 obsługuje tutaj tylko znaki ASCII."};
+    var codes=[104], sum=104, bits="";
+    for(var i=0;i<t.length;i++){var v=t.charCodeAt(i)-32; codes.push(v); sum+=v*(i+1);}
+    codes.push(sum%103,106);
+    codes.forEach(function(c){var on=true; C128[c].split("").forEach(function(n){bits+=(on?"1":"0").repeat(+n); on=!on;});});
+    return barSvg(bits,t);
+  }
+  var L=["0001101","0011001","0010011","0111101","0100011","0110001","0101111","0111011","0110111","0001011"];
+  var PAR=["LLLLLL","LLGLGG","LLGGLG","LLGGGL","LGLLGG","LGGLLG","LGGGLL","LGLGLG","LGLGGL","LGGLGL"];
+  function comp(s){return s.replace(/[01]/g,function(c){return c==="1"?"0":"1";});}
+  function ean13(t){
+    if(!/^\d{12,13}$/.test(t)) throw {pl:"EAN-13: podaj 12 lub 13 cyfr."};
+    var s=0; for(var i=0;i<12;i++) s+=(+t[i])*(i%2?3:1);
+    var chk=(10-s%10)%10;
+    if(t.length===13&&+t[12]!==chk) throw {pl:"Zła cyfra kontrolna. Powinna być "+chk+"."};
+    t=t.slice(0,12)+chk;
+    var par=PAR[+t[0]], bits="101";
+    for(i=1;i<=6;i++){var l=L[+t[i]]; bits+=par[i-1]==="L"?l:comp(l).split("").reverse().join("");}
+    bits+="01010";
+    for(i=7;i<=12;i++) bits+=comp(L[+t[i]]);
+    return barSvg(bits+"101",t);
+  }
+  function bw(f,text){
+    var o={bcid:f,text:text,scale:3,barcolor:C().i.slice(1),backgroundcolor:C().p.slice(1),paddingwidth:8,paddingheight:8};
+    if(f==="code39") o.includetext=true;
+    return bwipjs.toSVG(o);
+  }
+  function makeSvg(f,text){
+    if(f==="qr") return qrSvg(text);
+    if(f==="code128") return code128(text);
+    if(f==="ean13") return ean13(text);
+    return bw(f,text);
+  }
+
+  /* pola formularza */
+  function buildFields(){
+    var t=curType(), old={};
+    TYPES[t].f.forEach(function(x){var e=$("f_"+x[0]); if(e&&e.value!==undefined&&!FG[x[0]]) old[x[0]]=e.value;});
+    fields.innerHTML=""; FG={};
+    TYPES[t].f.forEach(function(x){
+      var k=x[0], w=document.createElement("div"), el; w.className="f";
+      if(x[2]==="sel"){
+        var p=document.createElement("p"); p.className="field"; p.textContent=x[1]; w.appendChild(p);
+        el=document.createElement("div"); el.id="f_"+k; w.appendChild(el); fields.appendChild(w);
+        FG[k]=Group("f_"+k,render); FG[k].add(x[3].map(function(o){return [o,o==="nopass"?"Brak":o];}),x[3][0]); return;
+      }
+      var lb=document.createElement("label"); lb.className="field"; lb.htmlFor="f_"+k; lb.textContent=x[1];
+      el=document.createElement(x[2]==="area"?"textarea":"input"); if(el.tagName==="INPUT") el.type="text";
+      el.id="f_"+k; el.spellcheck=false; el.autocomplete="off";
+      var r=rule(k); if(r){ if(r.mode) el.inputMode=r.mode; if(r.ph) el.placeholder=r.ph; }
+      if(old[k]!==undefined){el.value=old[k]; if(r) sanitize(el,r);}
+      el.addEventListener("input",function(){var rr=rule(k); if(rr) sanitize(el,rr); render();});
+      w.appendChild(lb); w.appendChild(el); fields.appendChild(w);
+    });
+  }
+  function layout(){
+    var f=fmt.get();
+    $("typebox").hidden=!two(f); $("ecbox").hidden=f!=="qr";
+    animate=true; buildFields(); render();
+  }
+
+  function render(){
+    var info=compose(), f=fmt.get(), wasEmpty=!current;
+    current=null; bPng.disabled=bSvg.disabled=true; status.textContent="";
+    if(info.kind==="empty"){box.classList.remove("scan"); box.textContent="Wpisz coś, a kod pojawi się tutaj."; animate=true; return;}
+    try{ current=makeSvg(f,info.text); }catch(e){
+      box.classList.remove("scan"); box.textContent="Nie da się utworzyć kodu."; status.textContent=e.pl||"Za dużo tekstu albo znaki niedozwolone w tym formacie."; return;
+    }
+    box.innerHTML=current; bPng.disabled=bSvg.disabled=false;
+    if(animate||wasEmpty){box.classList.remove("scan"); void box.offsetWidth; box.classList.add("scan"); animate=false;}
+    if(info.kind==="linkAdded") status.textContent="Wykryto link, dodano https://: "+info.text;
+    else if(info.kind==="link") status.textContent="Wykryto link.";
+  }
+  box.addEventListener("animationend",function(e){if(e.target===box) box.classList.remove("scan");});
+
+  /* eksport */
+  function save(blob,name){
+    var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+  }
+  function dims(s){
+    var m=/viewBox=["']\s*[\d.-]+[\s,]+[\d.-]+[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(s);
+    if(m) return [+m[1],+m[2]];
+    var w=/\swidth=["']([\d.]+)/.exec(s), h=/\sheight=["']([\d.]+)/.exec(s);
+    return [w?+w[1]:300,h?+h[1]:300];
+  }
+  bSvg.onclick=function(){ if(current) save(new Blob([current],{type:"image/svg+xml"}),"kod.svg"); };
+  bPng.onclick=function(){
+    if(!current) return;
+    var d=dims(current), k=Math.max(1,1200/Math.max(d[0],d[1])), W=Math.round(d[0]*k), H=Math.round(d[1]*k);
+    var s=current.replace(/<svg[^>]*>/,function(m){return m.replace(/\s(width|height)=("[^"]*"|'[^']*')/g,"").replace("<svg",'<svg width="'+W+'" height="'+H+'"');});
+    var img=new Image(), url=URL.createObjectURL(new Blob([s],{type:"image/svg+xml"}));
+    img.onload=function(){
+      var cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+      cv.getContext("2d").drawImage(img,0,0,W,H); URL.revokeObjectURL(url);
+      cv.toBlob(function(b){save(b,"kod.png");},"image/png");
+    };
+    img.src=url;
+  };
+
+  /* opcjonalna biblioteka bwip-js (plik obok strony) */
+  var sc=document.createElement("script"); sc.src="bwip-js-min.js";
+  sc.onload=function(){ if(typeof bwipjs!=="undefined"&&bwipjs.toSVG) fmt.add(BW.map(withThumb),""); };
+  sc.onerror=function(){hint.textContent="Aztec, Data Matrix, PDF417, Micro QR i Code 39 pojawią się po dodaniu pliku bwip-js-min.js obok tej strony.";};
+  document.head.appendChild(sc);
+
+  var SAMPLE={qr:"nobodymichael",code128:"qrgen",ean13:"590123412345",azteccode:"nobodymichael",datamatrix:"nobodymichael",pdf417:"nobodymichael",microqrcode:"12345",code39:"QRGEN"};
+  function withThumb(o){
+    var s=""; ov={i:"#191919",p:"#FFFFFF"};
+    try{s=makeSvg(o[0],SAMPLE[o[0]]);}catch(e){}
+    ov=null; return [o[0],o[1],"",s];
+  }
+  $("fmt").classList.add("cards");
+  fmt.add(NATIVE.map(withThumb),"qr");
+  layout();
+})();
+</script>
+</body>
+</html>
