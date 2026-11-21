@@ -4,10 +4,10 @@
 (function(){
   /* ====== TU WPISZ SWOJE ADRESY ====== */
   var DONATE=[
-    {id:"BTC", name:"Bitcoin",  addr:""},
-    {id:"ETH", name:"Ethereum", addr:""},
-    {id:"SOL", name:"Solana",   addr:""},
-    {id:"TRX", name:"Tron",     addr:""}
+    {id:"BTC", name:"Bitcoin",  addr:"bc1qvgam9y07puc29dq5g646dgyc603hqvy06uc36j"},
+    {id:"ETH", name:"Ethereum", addr:"0x437E14fd07BbCD3AD923B39a4c7bB89E8ccBD5a7"},
+    {id:"SOL", name:"Solana",   addr:"4u6XcbSN6CVGkUAZ6ej9r5SHgvKECQif5RBUU5UDMCpN"},
+    {id:"TRX", name:"Tron",     addr:"TREsDGqxv2vzresMsU3yoDojqzhr1eBkYy"}
   ];
   /* =================================== */
 
