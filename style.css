@@ -240,3 +240,22 @@ textarea {
 footer a {
   margin-left: .25rem;
 }
+/* na telefonie przyciski pobierania pod podglądem kodu */
+@media (max-width: 47.99rem) {
+  .qrgrid {
+    display: flex;
+    flex-direction: column;
+  }
+  .qrgrid > div:first-child {
+    display: contents;
+  }
+  .qrgrid > div:first-child > :not(.row) {
+    order: 1;
+  }
+  .qrgrid > .qr {
+    order: 2;
+  }
+  .qrgrid > div:first-child > .row {
+    order: 3;
+  }
+}
