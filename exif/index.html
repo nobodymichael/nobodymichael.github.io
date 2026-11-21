@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#FBF9F4">
+<title>exif cleaner — nobodymichael</title>
+<link rel="stylesheet" href="../style.css">
+<script src="../site.js"></script>
+<style>
+.drop{border:2px dashed var(--line);border-radius:20px;padding:2.2rem 1rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:var(--field)}
+.drop:hover,.drop.drag{border-color:var(--red);background:rgba(245,50,44,.08)}
+.meta{margin-top:1.25rem;font-size:.92rem;display:grid;gap:.4rem}
+.meta div{padding:.5rem .75rem;border-radius:12px;background:var(--field);border:1px solid var(--edge);display:flex;justify-content:space-between;gap:1rem}
+.meta span:last-child{font-weight:700;text-align:right;word-break:break-all}
+.prev-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:.75rem}
+.prev-wrap img{max-width:100%;max-height:15rem;border-radius:14px;object-fit:contain}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><a class="brand" href="../">nobodymichael</a></header>
+<main>
+<h1>exif cleaner</h1>
+<p class="lead">Sprawdza ukryte metadane zdjęcia (GPS, model aparatu, datę) i tworzy czysty plik bez śladów.</p>
+
+<div class="qrgrid">
+  <div>
+    <div class="drop" id="drop">
+      <strong>Kliknij lub upuść zdjęcie tutaj</strong>
+      <p class="hint">JPG, PNG, WebP — przetwarzane wyłącznie lokalnie</p>
+      <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden>
+    </div>
+
+    <div class="meta" id="meta" hidden></div>
+
+    <div class="row">
+      <button class="btn" id="dl" type="button" disabled>Pobierz czyste zdjęcie</button>
+      <button class="btn ghost" id="clr" type="button" disabled>Wyczyść</button>
+    </div>
+    <p class="status" id="st"></p>
+  </div>
+
+  <div class="qr" id="box">
+    <span>Podgląd zdjęcia</span>
+  </div>
+</div>
+</main>
+</div>
+<footer class="wrap">Bez śledzenia i zewnętrznych skryptów. <a href="https://github.com/nobodymichael">GitHub</a></footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const drop = $('drop'), fileInp = $('file'), metaBox = $('meta'), dlBtn = $('dl'), clrBtn = $('clr'), box = $('box'), st = $('st');
+let cleanBlob = null, cleanName = '';
+
+drop.onclick = () => fileInp.click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('drag'); };
+drop.ondragleave = () => drop.classList.remove('drag');
+drop.ondrop = e => {
+  e.preventDefault(); drop.classList.remove('drag');
+  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+};
+fileInp.onchange = () => { if (fileInp.files[0]) processFile(fileInp.files[0]); };
+
+clrBtn.onclick = () => {
+  cleanBlob = null; fileInp.value = '';
+  metaBox.hidden = true; metaBox.innerHTML = '';
+  box.innerHTML = '<span>Podgląd zdjęcia</span>';
+  dlBtn.disabled = true; clrBtn.disabled = true; st.textContent = '';
+};
+
+dlBtn.onclick = () => {
+  if (!cleanBlob) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(cleanBlob);
+  a.download = cleanName;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+async function processFile(file) {
+  st.textContent = 'Analizowanie...';
+  const buf = await file.arrayBuffer();
+  const info = scanExif(new DataView(buf));
+
+  metaBox.innerHTML = '';
+  const rows = [
+    ['Nazwa pliku', file.name],
+    ['Rozmiar oryginału', (file.size / 1024).toFixed(1) + ' KB'],
+    ['Blok EXIF / Metadane', info.hasExif ? 'Wykryto (' + info.details + ')' : 'Brak lub minimalne'],
+    ['Dane GPS w nagłówku', info.hasGps ? 'TAK (ryzyko wycieku lokalizacji)' : 'Nie wykryto']
+  ];
+  rows.forEach(([k, v]) => {
+    const d = document.createElement('div');
+    d.innerHTML = `<span>${k}</span><span>${v}</span>`;
+    metaBox.appendChild(d);
+  });
+  metaBox.hidden = false;
+
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+
+    const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+    const ext = outType === 'image/png' ? '.png' : '.jpg';
+    cleanName = file.name.replace(/\.[^.]+$/, '') + '_clean' + ext;
+
+    canvas.toBlob(blob => {
+      cleanBlob = blob;
+      URL.revokeObjectURL(url);
+      const prevUrl = URL.createObjectURL(blob);
+      box.innerHTML = `<div class="prev-wrap"><img src="${prevUrl}" alt=""><small>${img.naturalWidth}×${img.naturalHeight} px • ${(blob.size / 1024).toFixed(1)} KB</small></div>`;
+      dlBtn.disabled = false;
+      clrBtn.disabled = false;
+      st.textContent = 'Metadane usunięte. Plik gotowy do pobrania.';
+    }, outType, 0.94);
+  };
+  img.src = url;
+}
+
+function scanExif(view) {
+  let hasExif = false, hasGps = false, tags = [];
+  if (view.byteLength > 4 && view.getUint16(0) === 0xFFD8) {
+    let offset = 2;
+    while (offset < view.byteLength - 4) {
+      const marker = view.getUint16(offset);
+      if (marker === 0xFFE1) {
+        hasExif = true;
+        tags.push('EXIF/XMP');
+        const len = view.getUint16(offset + 2);
+        const slice = new Uint8Array(view.buffer, offset, Math.min(len, view.byteLength - offset));
+        const str = new TextDecoder('latin1').decode(slice);
+        if (str.includes('GPS')) hasGps = true;
+        if (str.includes('Apple') || str.includes('Samsung') || str.includes('Canon') || str.includes('Nikon') || str.includes('Sony')) tags.push('Model urządzenia');
+      } else if (marker === 0xFFED) {
+        hasExif = true; tags.push('IPTC');
+      }
+      if ((marker & 0xFF00) !== 0xFF00) break;
+      offset += 2 + view.getUint16(offset + 2);
+    }
+  }
+  return { hasExif, hasGps, details: [...new Set(tags)].join(', ') || 'Nagłówek standardowy' };
+}
+</script>
+</body>
+</html>
