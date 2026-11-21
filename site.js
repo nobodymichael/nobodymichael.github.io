@@ -88,6 +88,8 @@
     var h=document.querySelector("header");
     if(!h){h=document.createElement("header"); document.body.insertBefore(h,document.body.firstChild);}
     var box=document.createElement("div"); box.className="hdr";
+    var tg=document.createElement("a"); tg.className="btn small ghost"; tg.href="https://t.me/placekwlb"; tg.target="_blank"; tg.rel="noopener"; tg.textContent="Kontakt";
+    box.appendChild(tg);
     var d=document.createElement("button"); d.className="btn small"; d.type="button"; d.innerHTML='<span class="heart">'+ICON.heart+'</span>Donate'; d.onclick=openDonate;
     if(COINS.length) box.appendChild(d); box.appendChild(themeBtn()); h.appendChild(box);
     /* lista narzędzi: wystarczy <li><a href="exif/">exif cleaner</a></li> */
