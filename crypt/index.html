@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#FBF9F4">
+<title>szyfrowanie — nobodymichael</title>
+<link rel="stylesheet" href="../style.css">
+<script src="../site.js"></script>
+<style>
+input[type=password]{width:100%;font:inherit;padding:.8rem;border:1px solid var(--edge);border-radius:14px;background:var(--field);color:var(--ink)}
+input[type=password]:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 4px rgba(245,50,44,.18)}
+.outbox{display:flex;flex-direction:column;width:100%;height:100%;justify-content:space-between;text-align:left;gap:.75rem}
+.cipher{font:600 .85rem/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all;overflow-y:auto;max-height:15rem;padding:.75rem;border-radius:14px;background:var(--field);border:1px solid var(--edge);width:100%}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><a class="brand" href="../">nobodymichael</a></header>
+<main>
+<h1>szyfrowanie</h1>
+<p class="lead">Szyfruje i odszyfrowuje tekst algorytmem AES-256-GCM bezpośrednio w Twojej przeglądarce.</p>
+
+<div class="qrgrid">
+  <div>
+    <div class="f">
+      <p class="field">Tryb działania</p>
+      <div class="chips" id="mode">
+        <input type="radio" name="m" id="m_enc" value="enc" checked><label for="m_enc">Szyfruj</label>
+        <input type="radio" name="m" id="m_dec" value="dec"><label for="m_dec">Odszyfruj</label>
+      </div>
+    </div>
+
+    <div class="f">
+      <label class="field" for="txt" id="lbl_txt">Tekst do zaszyfrowania</label>
+      <textarea id="txt" placeholder="Wpisz wiadomość, hasło lub notatkę..."></textarea>
+    </div>
+
+    <div class="f">
+      <label class="field" for="pwd">Hasło (klucz)</label>
+      <input type="password" id="pwd" placeholder="Wpisz silne hasło">
+    </div>
+
+    <div class="row">
+      <button class="btn" id="run" type="button">Zaszyfruj</button>
+      <button class="btn ghost" id="clr" type="button">Wyczyść</button>
+    </div>
+    <p class="status" id="st"></p>
+  </div>
+
+  <div class="qr" id="box">
+    <span>Wynik pojawi się tutaj</span>
+  </div>
+</div>
+</main>
+</div>
+<footer class="wrap">Bez śledzenia i zewnętrznych skryptów. <a href="https://github.com/nobodymichael">GitHub</a></footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const txt = $('txt'), pwd = $('pwd'), run = $('run'), clr = $('clr'), box = $('box'), st = $('st');
+let lastOut = '';
+
+document.querySelectorAll('input[name="m"]').forEach(r => r.onchange = () => {
+  const enc = r.value === 'enc';
+  $('lbl_txt').textContent = enc ? 'Tekst do zaszyfrowania' : 'Zaszyfrowany ciąg (Base64)';
+  txt.placeholder = enc ? 'Wpisz wiadomość, hasło lub notatkę...' : 'Wklej zaszyfrowany ciąg znaków...';
+  run.textContent = enc ? 'Zaszyfruj' : 'Odszyfruj';
+  st.textContent = '';
+});
+
+clr.onclick = () => {
+  txt.value = ''; pwd.value = ''; lastOut = ''; st.textContent = '';
+  box.innerHTML = '<span>Wynik pojawi się tutaj</span>';
+};
+
+run.onclick = async () => {
+  const mode = document.querySelector('input[name="m"]:checked').value;
+  const input = txt.value.trim();
+  const pass = pwd.value;
+
+  if (!input || !pass) {
+    st.textContent = 'Wpisz zarówno tekst, jak i hasło.';
+    return;
+  }
+
+  try {
+    if (mode === 'enc') {
+      lastOut = await encryptText(input, pass);
+      st.textContent = 'Zaszyfrowano pomyślnie (AES-256-GCM).';
+    } else {
+      lastOut = await decryptText(input, pass);
+      st.textContent = 'Odszyfrowano pomyślnie.';
+    }
+    renderOut(lastOut);
+  } catch (e) {
+    st.textContent = mode === 'dec' ? 'Błędne hasło lub uszkodzony szyfrogram.' : 'Błąd szyfrowania.';
+    box.innerHTML = '<span>Brak wyniku</span>';
+  }
+};
+
+function renderOut(res) {
+  box.innerHTML = `<div class="outbox"><div class="cipher" id="res"></div><button class="btn" id="cp" type="button">Kopiuj wynik</button></div>`;
+  $('res').textContent = res;
+  $('cp').onclick = () => {
+    navigator.clipboard.writeText(res);
+    $('cp').textContent = 'Skopiowano ✓';
+    setTimeout(() => $('cp').textContent = 'Kopiuj wynik', 1600);
+  };
+}
+
+async function getKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptText(plain, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await getKey(password, salt);
+  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(plain));
+  const combined = new Uint8Array(salt.length + iv.length + cipher.byteLength);
+  combined.set(salt, 0);
+  combined.set(iv, salt.length);
+  combined.set(new Uint8Array(cipher), salt.length + iv.length);
+  return btoa(String.fromCharCode(...combined));
+}
+
+async function decryptText(b64, password) {
+  const data = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  if (data.length < 29) throw new Error('Za krótkie dane');
+  const salt = data.slice(0, 16);
+  const iv = data.slice(16, 28);
+  const cipher = data.slice(28);
+  const key = await getKey(password, salt);
+  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
+  return new TextDecoder().decode(plain);
+}
+</script>
+</body>
+</html>
