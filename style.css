@@ -164,3 +164,42 @@ dialog.donate::backdrop{background:rgba(25,25,25,.35);-webkit-backdrop-filter:bl
 .drow{display:flex;gap:.6rem;margin-top:1rem}
 .drow .btn{flex:1}
 .hdr{margin-left:auto}
+#gemini
+/* qrgen: pole na górze, auto-resize, kompaktowe kafelki formatów */
+.qrgrid > div:first-child {
+  display: flex;
+  flex-direction: column;
+}
+#fields {
+  order: -1; /* przenosi pola wpisywania na samą górę karty */
+  margin-bottom: .5rem;
+}
+textarea {
+  min-height: 2.9rem;
+  height: 2.9rem;
+  max-height: 14rem;
+  overflow-y: hidden;
+  resize: none;
+  line-height: 1.4;
+}
+#fmt {
+  grid-template-columns: repeat(auto-fill, minmax(7.2rem, 1fr));
+  gap: .4rem;
+}
+.chips.cards label {
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 2.6rem;
+  padding: .35rem .65rem;
+  border-radius: 999px;
+  font-size: .85rem;
+  gap: .45rem;
+}
+.th {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: .15rem;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
