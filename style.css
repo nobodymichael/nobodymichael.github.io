@@ -212,3 +212,31 @@ textarea {
   display: flex;
   flex-direction: column;
 }
+/* odstęp pod nagłówkiem, strzałka w kafelkach i rozdzielenie w stopce */
+.home h1 {
+  line-height: 1.02;
+  margin-bottom: 1.25rem;
+}
+.home .lead {
+  margin-top: .5rem;
+}
+.tools a {
+  position: relative;
+  padding-right: 2.5rem;
+}
+.tools a::after {
+  content: "→";
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.35rem;
+  font-weight: 700;
+  opacity: .65;
+  transition: transform .15s, opacity .15s;
+}
+.tools a:hover::after {
+  transform: translateX(4px);
+  opacity: 1;
+}
+footer a {
+  margin-left: .25rem;
+}
