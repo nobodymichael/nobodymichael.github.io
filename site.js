@@ -95,6 +95,15 @@
       if(a.querySelector("strong")) return;
       var s=document.createElement("strong"); s.textContent=a.textContent.trim(); a.textContent=""; a.appendChild(s);
     });
+    document.querySelectorAll("textarea").forEach(function(t){
+      t.dispatchEvent(new Event("input", { bubbles: true }));
+    });
   }
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init); else init();
+  document.addEventListener("input", function(e){
+    if (!e.target || e.target.tagName !== "TEXTAREA") return;
+    e.target.style.height = "auto";
+    e.target.style.height = e.target.scrollHeight + "px";
+    e.target.style.overflowY = e.target.scrollHeight > 224 ? "auto" : "hidden";
+  });
 })();
