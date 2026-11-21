@@ -11,6 +11,7 @@
   ];
   /* =================================== */
 
+  var COINS=DONATE.filter(function(c){return c.addr;}); /* bez adresu = nie pokazuje się */
   var KEY="theme", root=document.documentElement;
   var BASE=(document.currentScript&&document.currentScript.src||"").replace(/[^\/]*$/,"");
   function stored(){try{return localStorage.getItem(KEY)||"auto";}catch(e){return "auto";}}
@@ -56,8 +57,7 @@
   }
   function show(c){
     cur=c; var v=$("dview"), cp=$("dcopy");
-    if(!c.addr){v.innerHTML='<p class="dnote">Brak adresu '+c.id+'. Wpisz go na górze pliku site.js.</p>'; cp.disabled=true; return;}
-    cp.disabled=false; cp.textContent="Kopiuj adres";
+    cp.textContent="Kopiuj adres";
     ensureQr(function(){ if(cur!==c) return; v.innerHTML='<div class="dqr">'+qrSvg(c.addr)+'</div><div class="addr">'+esc(c.addr)+'</div>'; });
   }
   function copy(){
@@ -69,14 +69,14 @@
     dlg=document.createElement("dialog"); dlg.className="donate";
     dlg.innerHTML='<h2>Donate</h2><p class="dnote">Wybierz kryptowalutę. Kod QR powstaje lokalnie w przeglądarce.</p><div class="chips" id="dcoins" role="radiogroup"></div><div id="dview"></div><div class="drow"><button class="btn" id="dcopy" type="button">Kopiuj adres</button><button class="btn ghost" id="dclose" type="button">Zamknij</button></div>';
     document.body.appendChild(dlg);
-    var g=$("dcoins"), first=DONATE.filter(function(c){return c.addr;})[0]||DONATE[0];
-    DONATE.forEach(function(c,i){
+    var g=$("dcoins"), first=COINS[0];
+    COINS.forEach(function(c,i){
       var inp=document.createElement("input"), lb=document.createElement("label");
       inp.type="radio"; inp.name="coin"; inp.id="coin_"+i; inp.checked=(c===first); inp.onchange=function(){show(c);};
       lb.htmlFor=inp.id; lb.innerHTML=(COIN[c.id]||"")+"<span>"+c.id+"</span>"; lb.title=c.name;
       g.appendChild(inp); g.appendChild(lb);
     });
-    $("dcopy").onclick=function(){if(cur&&cur.addr) copy();};
+    $("dcopy").onclick=function(){if(cur) copy();};
     $("dclose").onclick=function(){dlg.close();};
     dlg.addEventListener("click",function(e){if(e.target===dlg) dlg.close();});
     show(first);
@@ -89,7 +89,7 @@
     if(!h){h=document.createElement("header"); document.body.insertBefore(h,document.body.firstChild);}
     var box=document.createElement("div"); box.className="hdr";
     var d=document.createElement("button"); d.className="btn small"; d.type="button"; d.innerHTML='<span class="heart">'+ICON.heart+'</span>Donate'; d.onclick=openDonate;
-    box.appendChild(d); box.appendChild(themeBtn()); h.appendChild(box);
+    if(COINS.length) box.appendChild(d); box.appendChild(themeBtn()); h.appendChild(box);
     /* lista narzędzi: wystarczy <li><a href="exif/">exif cleaner</a></li> */
     document.querySelectorAll(".tools a").forEach(function(a){
       if(a.querySelector("strong")) return;

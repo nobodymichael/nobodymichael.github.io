@@ -163,3 +163,4 @@ dialog.donate::backdrop{background:rgba(25,25,25,.35);-webkit-backdrop-filter:bl
 .addr{font:600 .85rem/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all;background:var(--field);border:1px solid var(--edge);border-radius:14px;padding:.75rem}
 .drow{display:flex;gap:.6rem;margin-top:1rem}
 .drow .btn{flex:1}
+.hdr{margin-left:auto}
