@@ -203,3 +203,12 @@ textarea {
   border-radius: 6px;
   flex-shrink: 0;
 }
+/* równe kafelki na stronie głównej */
+.tools li {
+  display: flex;
+}
+.tools a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
