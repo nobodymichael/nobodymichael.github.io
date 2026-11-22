@@ -52,7 +52,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const drop = $('drop'), fileInp = $('file'), metaBox = $('meta'), dlBtn = $('dl'), clrBtn = $('clr'), box = $('box'), st = $('st');
-let cleanBlob = null, cleanName = '';
+let cleanBlob = null, cleanName = '', prevUrl = null;
 
 drop.onclick = () => fileInp.click();
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('drag'); };
@@ -88,8 +88,9 @@ async function processFile(file) {
   const rows = [
     ['Nazwa pliku', file.name],
     ['Rozmiar oryginału', (file.size / 1024).toFixed(1) + ' KB'],
-    ['Blok EXIF / Metadane', info.hasExif ? 'Wykryto (' + info.details + ')' : 'Brak lub minimalne'],
-    ['Dane GPS w nagłówku', info.hasGps ? 'TAK (ryzyko wycieku lokalizacji)' : 'Nie wykryto']
+    ['Metadane', info.hasMeta ? 'Wykryto (' + info.tags.join(', ') + ')' : 'Nie wykryto'],
+    ['Urządzenie', info.device || 'Brak danych'],
+    ['Dane GPS', info.gps ? 'TAK (ryzyko wycieku lokalizacji)' : 'Nie wykryto']
   ];
   rows.forEach(([k, v]) => {
     const d = document.createElement('div');
@@ -114,7 +115,8 @@ async function processFile(file) {
     canvas.toBlob(blob => {
       cleanBlob = blob;
       URL.revokeObjectURL(url);
-      const prevUrl = URL.createObjectURL(blob);
+      if (prevUrl) URL.revokeObjectURL(prevUrl);
+      prevUrl = URL.createObjectURL(blob);
       box.innerHTML = `<div class="prev-wrap"><img src="${prevUrl}" alt=""><small>${img.naturalWidth}×${img.naturalHeight} px • ${(blob.size / 1024).toFixed(1)} KB</small></div>`;
       dlBtn.disabled = false;
       clrBtn.disabled = false;
@@ -124,28 +126,60 @@ async function processFile(file) {
   img.src = url;
 }
 
-function scanExif(view) {
-  let hasExif = false, hasGps = false, tags = [];
-  if (view.byteLength > 4 && view.getUint16(0) === 0xFFD8) {
-    let offset = 2;
-    while (offset < view.byteLength - 4) {
-      const marker = view.getUint16(offset);
-      if (marker === 0xFFE1) {
-        hasExif = true;
-        tags.push('EXIF/XMP');
-        const len = view.getUint16(offset + 2);
-        const slice = new Uint8Array(view.buffer, offset, Math.min(len, view.byteLength - offset));
-        const str = new TextDecoder('latin1').decode(slice);
-        if (str.includes('GPS')) hasGps = true;
-        if (str.includes('Apple') || str.includes('Samsung') || str.includes('Canon') || str.includes('Nikon') || str.includes('Sony')) tags.push('Model urządzenia');
-      } else if (marker === 0xFFED) {
-        hasExif = true; tags.push('IPTC');
-      }
-      if ((marker & 0xFF00) !== 0xFF00) break;
-      offset += 2 + view.getUint16(offset + 2);
-    }
+/* czyta tagi TIFF/EXIF: wskaźnik GPS (0x8825), producent i model aparatu */
+function tiff(v, s) {
+  const le = v.getUint16(s) === 0x4949, u16 = o => v.getUint16(o, le), u32 = o => v.getUint32(o, le), r = {};
+  if (u16(s + 2) !== 42) return r;
+  const o = s + u32(s + 4), n = u16(o);
+  const str = e => { const c = u32(e + 4), p = c > 4 ? s + u32(e + 8) : e + 8; let t = ''; for (let i = 0; i < c - 1 && p + i < v.byteLength; i++) t += String.fromCharCode(v.getUint8(p + i)); return t.trim(); };
+  for (let i = 0; i < n; i++) {
+    const e = o + 2 + i * 12; if (e + 12 > v.byteLength) break;
+    const t = u16(e);
+    if (t === 0x8825) r.gps = true;
+    if (t === 0x010F) r.make = str(e);
+    if (t === 0x0110) r.model = str(e);
   }
-  return { hasExif, hasGps, details: [...new Set(tags)].join(', ') || 'Nagłówek standardowy' };
+  return r;
+}
+
+function scanExif(v) {
+  const out = { hasMeta: false, gps: false, tags: [], device: '' };
+  const add = t => { out.hasMeta = true; if (!out.tags.includes(t)) out.tags.push(t); };
+  const merge = r => { if (r.gps) out.gps = true; if (r.make || r.model) out.device = [r.make, r.model].filter(Boolean).join(' '); };
+  const ascii = (o, n) => { let t = ''; for (let i = 0; i < n && o + i < v.byteLength; i++) t += String.fromCharCode(v.getUint8(o + i)); return t; };
+  try {
+    if (v.getUint16(0) === 0xFFD8) {                       // JPEG
+      let o = 2;
+      while (o + 4 < v.byteLength) {
+        const m = v.getUint16(o);
+        if (m === 0xFFDA || (m & 0xFF00) !== 0xFF00) break; // początek obrazu
+        const len = v.getUint16(o + 2);
+        if (m === 0xFFE1) {
+          if (ascii(o + 4, 6) === 'Exif\0\0') { add('EXIF'); merge(tiff(v, o + 10)); }
+          else if (ascii(o + 4, 24).startsWith('http://ns.adobe.com/xap')) { add('XMP'); if (ascii(o + 4, Math.min(len, 60000)).includes('GPSLatitude')) out.gps = true; }
+        } else if (m === 0xFFED) add('IPTC');
+        o += 2 + len;
+      }
+    } else if (ascii(1, 3) === 'PNG') {                    // PNG
+      let o = 8;
+      while (o + 12 <= v.byteLength) {
+        const len = v.getUint32(o), t = ascii(o + 4, 4);
+        if (t === 'eXIf') { add('EXIF'); merge(tiff(v, o + 8)); }
+        else if (t === 'iTXt' && ascii(o + 8, 17) === 'XML:com.adobe.xmp') add('XMP');
+        else if (t === 'IDAT') break;
+        o += 12 + len;
+      }
+    } else if (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WEBP') { // WebP
+      let o = 12;
+      while (o + 8 <= v.byteLength) {
+        const t = ascii(o, 4), len = v.getUint32(o + 4, true);
+        if (t === 'EXIF') { add('EXIF'); let s = o + 8; if (ascii(s, 6) === 'Exif\0\0') s += 6; merge(tiff(v, s)); }
+        else if (t === 'XMP ') add('XMP');
+        o += 8 + len + (len & 1);
+      }
+    }
+  } catch (err) {}
+  return out;
 }
 </script>
 </body>
