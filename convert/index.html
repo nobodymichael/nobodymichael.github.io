@@ -68,7 +68,8 @@ input[type=number]{width:100%;font:inherit;padding:.7rem;border:1px solid var(--
 <script>
 const $ = id => document.getElementById(id);
 const drop = $('drop'), fileInp = $('file'), qual = $('qual'), qval = $('qval'), maxw = $('maxw'), dlBtn = $('dl'), box = $('box'), st = $('st');
-let srcImg = null, origSize = 0, origName = '', outBlob = null, outName = '';
+let srcImg = null, origSize = 0, origName = '', outBlob = null, outName = '', prevUrl = null, tmr;
+const later = () => { clearTimeout(tmr); tmr = setTimeout(render, 150); };
 
 drop.onclick = () => fileInp.click();
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('drag'); };
@@ -80,8 +81,8 @@ document.querySelectorAll('input[name="f"]').forEach(r => r.onchange = () => {
   $('qbox').hidden = r.value === 'image/png';
   render();
 });
-qual.oninput = () => { qval.textContent = qual.value + '%'; render(); };
-maxw.oninput = render;
+qual.oninput = () => { qval.textContent = qual.value + '%'; later(); };
+maxw.oninput = later;
 
 dlBtn.onclick = () => {
   if (!outBlob) return;
@@ -128,7 +129,8 @@ function render() {
     outBlob = blob;
     const diff = (((blob.size - origSize) / origSize) * 100).toFixed(0);
     const sign = diff > 0 ? '+' : '';
-    const prevUrl = URL.createObjectURL(blob);
+    if (prevUrl) URL.revokeObjectURL(prevUrl);
+    prevUrl = URL.createObjectURL(blob);
     box.innerHTML = `<div class="prev-wrap"><img src="${prevUrl}" alt=""><span class="badge">${(blob.size / 1024).toFixed(1)} KB (${sign}${diff}%)</span><small>${w}×${h} px</small></div>`;
     dlBtn.disabled = false;
     st.textContent = 'Gotowe do pobrania.';
