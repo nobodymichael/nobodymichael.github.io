@@ -49,16 +49,17 @@
     if(window.qrcode) return cb();
     var s=document.createElement("script"); s.src=BASE+"qrcode.js"; s.onload=cb; document.head.appendChild(s);
   }
-  function qrSvg(t){
-    var qr=qrcode(0,"M"); qr.addData(t); qr.make();
-    var n=qr.getModuleCount(), q=2, d="";
+  /* wspólny generator QR (używa go też qrgen): nmQr(tekst,{ink,paper,q,ec}) -> SVG */
+  window.nmQr=function(t,o){
+    o=o||{}; var qr=qrcode(0,o.ec||"M"); qr.addData(t); qr.make();
+    var n=qr.getModuleCount(), q=o.q==null?4:o.q, w=n+q*2, d="";
     for(var r=0;r<n;r++) for(var c=0;c<n;c++) if(qr.isDark(r,c)) d+="M"+(c+q)+" "+(r+q)+"h1v1h-1z";
-    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(n+q*2)+' '+(n+q*2)+'" shape-rendering="crispEdges"><path d="'+d+'" fill="#191919"/></svg>';
-  }
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+w+'" shape-rendering="crispEdges">'+(o.paper?'<rect width="'+w+'" height="'+w+'" fill="'+o.paper+'"/>':'')+'<path d="'+d+'" fill="'+(o.ink||"#191919")+'"/></svg>';
+  };
   function show(c){
     cur=c; var v=$("dview"), cp=$("dcopy");
     cp.textContent="Kopiuj adres";
-    ensureQr(function(){ if(cur!==c) return; v.innerHTML='<div class="dqr">'+qrSvg(c.addr)+'</div><div class="addr">'+esc(c.addr)+'</div>'; });
+    ensureQr(function(){ if(cur!==c) return; v.innerHTML='<div class="dqr">'+nmQr(c.addr,{q:2})+'</div><div class="addr">'+esc(c.addr)+'</div>'; });
   }
   function copy(){
     var t=cur.addr, ok=function(){var b=$("dcopy"); b.textContent="Skopiowano \u2713"; setTimeout(function(){b.textContent="Kopiuj adres";},1600);};
