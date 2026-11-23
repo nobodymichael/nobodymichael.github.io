@@ -44,16 +44,12 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
 .p-ed [data-code]{cursor:grab}
 .p-ed.drag [data-code]{cursor:grabbing}
 .p-sub{font-weight:700;margin:1.25rem 0 .5rem}
-.p-prev{max-width:26rem}
+.print[hidden]{display:none}
+.p-prev{display:flex;flex-wrap:wrap;gap:.75rem}
+.p-prev>div{flex:0 1 13rem;min-width:0}
+.p-prev.one>div{flex-basis:26rem;max-width:100%}
 .p-prev svg{display:block;width:100%;height:auto;box-shadow:0 8px 24px var(--sh);border-radius:2px}
-#printSheet{display:none}
-@media print{
-  body>*:not(#printSheet){display:none!important}
-  #printSheet{display:block;overflow:hidden}
-  html,body{background:#fff!important;margin:0!important;padding:0!important}
-}
 </style>
-<style id="pageStyle"></style>
 </head>
 <body>
 <div class="wrap">
@@ -72,6 +68,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
 <div class="row">
 <button class="btn" id="png" disabled>Pobierz PNG</button>
 <button class="btn ghost" id="svg" disabled>Pobierz SVG</button>
+<button class="btn ghost" id="pt" type="button" aria-expanded="false" aria-controls="print">Drukuj…</button>
 </div>
 </section>
 <section class="q-opt glass">
@@ -88,7 +85,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
 </section>
 </div>
 
-<section class="print glass" id="print">
+<section class="print glass" id="print" hidden>
 <h2>Druk</h2>
 <p class="hint">Ustaw wymiary plakietki, przeciągnij kod w wybrane miejsce i wydrukuj na A4 z obrysem do wycinania.</p>
 <div class="pgrid">
@@ -108,7 +105,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
 <div><label class="field" for="p_o">Arkusz A4</label>
 <select id="p_o"><option value="p">Pionowo</option><option value="l">Poziomo</option></select></div>
 <div><label class="field" for="p_m">Margines (mm)</label><input type="number" id="p_m" value="10" min="0" max="50" step="1" inputmode="decimal"></div>
-<label class="chk"><input type="checkbox" id="p_tile"> Powielaj plakietki na całym arkuszu</label>
+<div class="span"><label class="field" for="p_n">Liczba kopii</label><input type="number" id="p_n" value="1" min="1" max="500" step="1" inputmode="numeric"></div>
 <label class="chk"><input type="checkbox" id="p_cut" checked> Obrys do wycinania</label>
 <p class="status span" id="p_msg" aria-live="polite"></p>
 <div class="span"><button class="btn" type="button" id="p_print" disabled>Drukuj / zapisz PDF</button></div>
@@ -116,14 +113,13 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
 <div>
 <div class="p-ed" id="p_ed" tabindex="0" aria-label="Edytor plakietki. Przeciągnij kod lub użyj strzałek."></div>
 <p class="p-sub">Podgląd arkusza A4</p>
-<div class="p-prev" id="p_prev"></div>
+<div class="p-prev one" id="p_prev"></div>
 </div>
 </div>
 </section>
 </main>
 </div>
 <footer class="wrap">Kod powstaje lokalnie w przeglądarce. Nic nie jest wysyłane.</footer>
-<div id="printSheet" aria-hidden="true"></div>
 <script src="../qrcode.js"></script>
 <script>
 (function(){
@@ -243,8 +239,8 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
   /* ===== druk: plakietka na A4 ===== */
   const P=(()=>{
     const el={};
-    ["bw","bh","cw","grid","snap","o","m","tile","cut","ed","prev","msg","print","c","ch","cv"].forEach(k=>el[k]=$("p_"+k));
-    const sheet=$("printSheet"), pageStyle=$("pageStyle");
+    ["bw","bh","cw","grid","snap","o","m","n","cut","ed","prev","msg","print","c","ch","cv"].forEach(k=>el[k]=$("p_"+k));
+    let pagesArr=[1];
     const S={x:0,y:0,centered:true,gx:false,gy:false}; /* mm, lewy górny róg kodu w plakietce */
     const mm=v=>Math.round(v*100)/100;
     const cm=v=>String(mm(v/10)).replace(".",",");
@@ -297,32 +293,33 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
     /* arkusz A4 */
     function layout(G){
       const aw=G.PW-2*G.m, ah=G.PH-2*G.m, fits=G.bw<=aw+.001&&G.bh<=ah+.001;
+      const n=Math.max(1,Math.min(500,Math.floor(num(el.n,1,1))));
       let cols=1, rows=1;
-      if(el.tile.checked&&fits){cols=Math.max(1,Math.floor((aw+.001)/G.bw)); rows=Math.max(1,Math.floor((ah+.001)/G.bh));}
-      return {fits,cols,rows};
+      if(fits){cols=Math.max(1,Math.floor((aw+.001)/G.bw)); rows=Math.max(1,Math.floor((ah+.001)/G.bh));}
+      const cap=cols*rows;
+      return {fits,cols,rows,n,cap,pages:Math.ceil(n/cap)};
     }
-    function sheetSvg(G,Lt,printMode){
-      const tiles=[];
-      for(let r=0;r<Lt.rows;r++) for(let c=0;c<Lt.cols;c++){
-        const ox=mm(G.m+c*G.bw), oy=mm(G.m+r*G.bh);
+    function pageSvg(G,Lt,count,printMode){
+      const tiles=[]; let d="";
+      for(let i=0;i<count;i++){
+        const ox=mm(G.m+(i%Lt.cols)*G.bw), oy=mm(G.m+Math.floor(i/Lt.cols)*G.bh);
         tiles.push(`<g transform="translate(${ox} ${oy})">${codeSvg(G,S.x,S.y)}</g>`);
+        d+=`M${ox} ${oy}h${mm(G.bw)}v${mm(G.bh)}h${-mm(G.bw)}z`;
       }
-      let cut="";
-      if(el.cut.checked){
-        let d=""; for(let c=0;c<=Lt.cols;c++) d+=`M${mm(G.m+c*G.bw)} ${G.m}V${mm(G.m+Lt.rows*G.bh)}`;
-        for(let r=0;r<=Lt.rows;r++) d+=`M${G.m} ${mm(G.m+r*G.bh)}H${mm(G.m+Lt.cols*G.bw)}`;
-        cut=`<path d="${d}" stroke="#000" stroke-width=".25" fill="none"/>`;
-      }
-      const size=printMode?` width="${G.PW}mm" height="${G.PH}mm" style="display:block"`:"";
+      const cut=el.cut.checked?`<path d="${d}" stroke="#000" stroke-width=".25" fill="none"/>`:"";
+      const size=printMode?` width="${G.PW}mm" height="${G.PH}mm"`:"";
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${G.PW} ${G.PH}"${size}><rect width="${G.PW}" height="${G.PH}" fill="#fff"/>${tiles.join("")}${cut}</svg>`;
     }
 
     function update(){
       const G=geom(); place(G); edit(G);
       const Lt=layout(G);
-      el.prev.innerHTML=sheetSvg(G,Lt,false);
+      pagesArr=Array.from({length:Lt.pages},(_,i)=>Math.min(Lt.cap,Lt.n-i*Lt.cap));
+      const shown=pagesArr.slice(0,6);
+      el.prev.className="p-prev"+(pagesArr.length===1?" one":"");
+      el.prev.innerHTML=shown.map(c=>`<div>${pageSvg(G,Lt,c,false)}</div>`).join("");
       el.print.disabled=!cur;
-      el.msg.textContent=!Lt.fits?"Plakietka nie mieści się na A4 po odjęciu marginesów.":el.tile.checked?`Na arkuszu: ${Lt.cols*Lt.rows} szt. (${Lt.cols} × ${Lt.rows}).`:"";
+      el.msg.textContent=(!Lt.fits?"Plakietka nie mieści się na A4 po odjęciu marginesów. ":"")+`Kopii: ${Lt.n}, na arkusz: ${Lt.cap}, arkuszy: ${Lt.pages}.`+(pagesArr.length>6?" Podgląd pokazuje pierwsze 6.":"");
     }
 
     /* przeciąganie, magnes na środek, siatka, strzałki */
@@ -362,18 +359,28 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
     el.c.onclick=()=>{S.centered=true; update();};
     el.ch.onclick=()=>{const G=geom(); S.centered=false; S.x=(G.bw-G.cw)/2; update();};
     el.cv.onclick=()=>{const G=geom(); S.centered=false; S.y=(G.bh-G.ch)/2; update();};
-    ["bw","bh","cw","grid","snap","o","m","tile","cut"].forEach(k=>{el[k].addEventListener("input",update); el[k].addEventListener("change",update);});
+    ["bw","bh","cw","grid","snap","o","m","n","cut"].forEach(k=>{el[k].addEventListener("input",update); el[k].addEventListener("change",update);});
 
     el.print.onclick=()=>{
       if(!cur) return;
       const G=geom(), Lt=layout(G);
-      pageStyle.textContent=`@page{size:A4 ${G.land?"landscape":"portrait"};margin:0}`;
-      sheet.style.height=(G.PH-1)+"mm"; sheet.style.width=G.PW+"mm";
-      sheet.innerHTML=sheetSvg(G,Lt,true);
-      window.print();
+      const body=pagesArr.map(c=>`<div class="pg">${pageSvg(G,Lt,c,true)}</div>`).join("");
+      const html=`<!doctype html><html><head><meta charset="utf-8"><title>qrgen</title><style>@page{size:A4 ${G.land?"landscape":"portrait"};margin:0}html,body{margin:0;padding:0;background:#fff}.pg{width:${G.PW}mm;height:${G.PH-1}mm;overflow:hidden;page-break-after:always;break-after:page}.pg:last-child{page-break-after:auto;break-after:auto}svg{display:block}</style></head><body>${body}</body></html>`;
+      const f=document.createElement("iframe");
+      f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+      document.body.appendChild(f);
+      const d=f.contentWindow.document; d.open(); d.write(html); d.close();
+      setTimeout(()=>{f.contentWindow.focus(); f.contentWindow.print(); setTimeout(()=>f.remove(),60000);},300);
     };
     return {update};
   })();
+
+  /* pokaż / ukryj sekcję druku */
+  const pt=$("pt"), ps=$("print");
+  pt.onclick=()=>{
+    const open=ps.hidden; ps.hidden=!open; pt.setAttribute("aria-expanded",open); pt.textContent=open?"Ukryj druk":"Drukuj…";
+    if(open){P.update(); ps.scrollIntoView({behavior:"smooth",block:"start"});}
+  };
 
   /* przyciski formatów z miniaturami */
   function thumb(f){ov={i:INK0,p:"#FFFFFF"}; let s=""; try{s=makeSvg(f,SAMPLE[f]);}catch(e){} ov=null; return s;}
