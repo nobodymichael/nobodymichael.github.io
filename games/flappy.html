@@ -67,7 +67,6 @@
 
     <div class="relative w-full max-w-[420px] h-full max-h-[740px] flex flex-col bg-[#111218] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
 
-        <!-- Top Navigation / Stats Bar -->
         <header class="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none">
             <div class="flex items-center gap-2 pointer-events-auto">
                 <a href="./" class="h-10 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center gap-1.5 text-xs font-extrabold text-white backdrop-blur-md transition-all active:scale-95" title="Wróć do Games Hub">
@@ -103,7 +102,6 @@
         <div id="gameWrapper" class="relative flex-1 w-full h-full cursor-pointer overflow-hidden">
             <canvas id="gameCanvas" class="w-full h-full block"></canvas>
 
-            <!-- Start Screen -->
             <div id="startOverlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-black/50 backdrop-blur-[3px] transition-opacity duration-300">
                 <div class="w-16 h-16 mb-3 rounded-2xl bg-[#F5322C]/20 border border-[#F5322C]/40 flex items-center justify-center glow-red animate-bounce">
                     <svg class="w-8 h-8 text-[#F5322C]" viewBox="0 0 24 24" fill="currentColor">
@@ -136,7 +134,6 @@
                 </div>
             </div>
 
-            <!-- Game Over Screen -->
             <div id="gameOverOverlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-black/80 backdrop-blur-md hidden transition-all duration-300">
                 <div class="w-full max-w-[290px] bg-[#181a24] border border-white/10 rounded-2xl p-6 glow-box flex flex-col items-center">
                     <span class="text-xs font-bold uppercase tracking-widest text-[#F5322C] mb-1">Koniec Gry</span>
