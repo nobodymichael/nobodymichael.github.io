@@ -3,12 +3,21 @@
   --red:#F5322C;--red2:#FF4A44;--on-red:#0d0e0f;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --r:20px;--r2:12px;
-  /* ciemny (domyślny) */
+  /* domyślny ciemny */
   --ink:#F1F0EC;--paper:#0d0e0f;--muted:rgba(241,240,236,.62);
   --glass:#141516;--edge:rgba(255,255,255,.09);--sheen:rgba(255,255,255,.035);
   --field:rgba(255,255,255,.04);--chip:rgba(255,255,255,.04);--line:rgba(255,255,255,.14);
   --sh:rgba(0,0,0,.45);--grid:rgba(255,255,255,.028);--glow:rgba(245,50,44,.16);
   color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme]){
+    --ink:#191919;--paper:#FBF9F4;--muted:rgba(25,25,25,.62);
+    --glass:rgba(255,255,255,.72);--edge:rgba(25,25,25,.10);--sheen:rgba(255,255,255,0);
+    --field:rgba(25,25,25,.04);--chip:rgba(25,25,25,.04);--line:rgba(25,25,25,.18);
+    --sh:rgba(25,25,25,.10);--grid:rgba(25,25,25,.04);--glow:rgba(245,50,44,.10);
+    color-scheme:light;
+  }
 }
 :root[data-theme=light]{
   --ink:#191919;--paper:#FBF9F4;--muted:rgba(25,25,25,.62);
@@ -16,6 +25,13 @@
   --field:rgba(25,25,25,.04);--chip:rgba(25,25,25,.04);--line:rgba(25,25,25,.18);
   --sh:rgba(25,25,25,.10);--grid:rgba(25,25,25,.04);--glow:rgba(245,50,44,.10);
   color-scheme:light;
+}
+:root[data-theme=dark]{
+  --ink:#F1F0EC;--paper:#0d0e0f;--muted:rgba(241,240,236,.62);
+  --glass:#141516;--edge:rgba(255,255,255,.09);--sheen:rgba(255,255,255,.035);
+  --field:rgba(255,255,255,.04);--chip:rgba(255,255,255,.04);--line:rgba(255,255,255,.14);
+  --sh:rgba(0,0,0,.45);--grid:rgba(255,255,255,.028);--glow:rgba(245,50,44,.16);
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 html{background:var(--paper);color:var(--ink);font:400 17px/1.5 ui-sans-serif,"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
@@ -33,9 +49,13 @@ a{color:inherit}
 :focus-visible{outline:3px solid var(--red);outline-offset:3px}
 
 /* nagłówek */
-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.1rem 0;border-bottom:1px solid var(--edge)}
-.hdr{display:flex;align-items:center;gap:.6rem;margin-left:auto}
-.brand{font-weight:800;letter-spacing:-.02em;text-decoration:none}
+header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:1.1rem 0;border-bottom:1px solid var(--edge)}
+.hdr-left{display:flex;align-items:center;gap:.55rem;min-width:0}
+.back-btn{width:2.35rem;height:2.35rem;border-radius:var(--r2);border:1px solid var(--line);background:var(--chip);color:var(--ink);text-decoration:none;display:grid;place-items:center;font-weight:900;font-size:1.1rem;line-height:1;flex-shrink:0;transition:background .15s,color .15s,border-color .15s,transform .1s}
+.back-btn:hover{background:var(--red);color:var(--on-red);border-color:var(--red)}
+.back-btn:active{transform:translateX(-2px)}
+.hdr{display:flex;align-items:center;gap:.55rem;margin-left:auto;flex-shrink:0}
+.brand{font-weight:800;letter-spacing:-.02em;text-decoration:none;white-space:nowrap}
 .brand:hover{color:var(--red)}
 
 /* typografia */
@@ -70,9 +90,20 @@ footer a:hover{color:var(--red)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
 .btn:disabled:hover{background:var(--red);border-color:var(--red);color:var(--on-red)}
 .btn.ghost:disabled:hover{background:var(--chip);border-color:var(--line);color:var(--ink)}
-.btn.small{padding:.5rem 1.1rem;display:inline-flex;align-items:center;gap:.45rem}
-.btn .heart{color:var(--red);display:inline-flex;transition:color .15s}
-.btn:hover .heart{color:currentColor}
+.btn.small{padding:.5rem 1.05rem;display:inline-flex;align-items:center;gap:.45rem}
+
+/* wyróżniony przycisk donate */
+.btn.donate-btn{
+  background:var(--ink);border-color:var(--ink);color:var(--paper);
+  box-shadow:0 0 0 1px rgba(245,50,44,.45),0 6px 18px rgba(245,50,44,.22);
+}
+.btn.donate-btn:hover{
+  background:var(--red);border-color:var(--red);color:#fff;
+  box-shadow:0 8px 22px rgba(245,50,44,.38);
+}
+.btn.donate-btn .heart{color:var(--red);display:inline-flex;transition:color .15s,transform .15s}
+.btn.donate-btn:hover .heart{color:#fff;transform:scale(1.12)}
+
 .icon-btn{width:2.6rem;height:2.6rem;border-radius:var(--r2);border:1px solid var(--line);background:var(--chip);color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:background .15s,color .15s,transform .1s}
 .icon-btn:hover{background:var(--red);color:var(--on-red);border-color:var(--red)}
 .icon-btn:active{transform:scale(.92)}
@@ -137,7 +168,13 @@ textarea{min-height:2.9rem;height:2.9rem;max-height:14rem;overflow-y:hidden;resi
 .tools li{display:flex}
 .tools a{flex:1;display:flex;flex-direction:column;position:relative;padding:1.4rem 1.4rem 4.5rem;text-decoration:none;transition:transform .2s,border-color .2s,background .2s}
 .tools strong{display:block;font-size:clamp(1.5rem,4vw,2rem);font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:.35rem}
-.tools a::after{content:"→";position:absolute;right:1.1rem;bottom:1.1rem;width:2.75rem;height:2.75rem;display:grid;place-items:center;border-radius:var(--r2);background:var(--red);color:var(--on-red);font-weight:800;transition:transform .15s,background .15s}
+.tools a::after{
+  content:">";position:absolute;right:1.1rem;bottom:1.1rem;
+  width:2.85rem;height:2.85rem;display:grid;place-items:center;
+  border-radius:var(--r2);background:var(--red);color:var(--on-red);
+  font-weight:900;font-size:1.35rem;line-height:1;
+  transition:transform .15s,background .15s
+}
 .tools a:hover,.tools a:focus-visible{background:linear-gradient(135deg,rgba(245,50,44,.16),transparent 70%),var(--glass);border-color:var(--red);transform:translateY(-4px)}
 .tools a:hover::after{transform:translateX(4px);background:var(--red2)}
 .tools a:focus-visible{outline-color:var(--red)}

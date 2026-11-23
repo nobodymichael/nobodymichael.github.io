@@ -14,21 +14,37 @@
   var COINS=DONATE.filter(function(c){return c.addr;}); /* bez adresu = nie pokazuje się */
   var KEY="theme", root=document.documentElement;
   var BASE=(document.currentScript&&document.currentScript.src||"").replace(/[^\/]*$/,"");
+  var mq=window.matchMedia?window.matchMedia("(prefers-color-scheme: light)"):null;
+
   function stored(){try{return localStorage.getItem(KEY)||"auto";}catch(e){return "auto";}}
-  function apply(m){ if(m==="auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme",m); }
+  function isLightMode(m){
+    if(m==="light") return true;
+    if(m==="dark") return false;
+    return !!(mq&&mq.matches);
+  }
+  function syncMeta(m){
+    var meta=document.querySelector('meta[name="theme-color"]');
+    if(meta) meta.setAttribute("content",isLightMode(m)?"#FBF9F4":"#0d0e0f");
+  }
+  function apply(m){
+    if(m==="auto") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme",m);
+    syncMeta(m);
+  }
   apply(stored());
 
   function svg(p,s){return '<svg viewBox="0 0 24 24" width="'+(s||20)+'" height="'+(s||20)+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>';}
   var ICON={
     sun:svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>'),
     moon:svg('<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>'),
-    auto:svg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>'),
-    heart:svg('<path d="M12 20s-7-4.500-7-10a4 4 0 0 1 7-2.500A4 4 0 0 1 19 10c0 5.500-7 10-7 10z" fill="currentColor"/>',18)
+    auto:svg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/>'),
+    heart:svg('<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z" fill="currentColor" stroke="none"/>',18),
+    dm:svg('<path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/>',18)
   };
   var COIN={
     BTC:svg('<circle cx="12" cy="12" r="10"/><text x="12" y="17.5" font-size="15" font-weight="800" text-anchor="middle" fill="currentColor" stroke="none" font-family="Helvetica,Arial,sans-serif">&#8383;</text>',22),
-    ETH:svg('<path d="M12 2l6 10-6 3.500L6 12zM12 16.500l6-3.500-6 9-6-9z" fill="currentColor" stroke="none"/>',22),
-    SOL:svg('<path d="M6.500 5.500h14l-3 3.500h-14zM3.500 10.300h14l3 3.500h-14zM6.500 15.100h14l-3 3.500h-14z" fill="currentColor" stroke="none"/>',22),
+    ETH:svg('<path d="M12 2l6 10-6 3.5L6 12zM12 16.5l6-3.5-6 9-6-9z" fill="currentColor" stroke="none"/>',22),
+    SOL:svg('<path d="M6.5 5.5h14l-3 3.5h-14zM3.5 10.3h14l3 3.5h-14zM6.5 15.1h14l-3 3.5h-14z" fill="currentColor" stroke="none"/>',22),
     TRX:svg('<path d="M3 4l18 3-9 15zM3 4l9 7 9-4M12 11l-1 11"/>',22)
   };
   function $(i){return document.getElementById(i);}
@@ -38,8 +54,19 @@
   var LABEL={auto:"Motyw: automatyczny",light:"Motyw: jasny",dark:"Motyw: ciemny"}, NEXT={auto:"light",light:"dark",dark:"auto"};
   function themeBtn(){
     var b=document.createElement("button"); b.className="icon-btn"; b.type="button";
-    function paint(){var m=stored(); b.innerHTML=ICON[m==="light"?"sun":m==="dark"?"moon":"auto"]; b.title=b.ariaLabel=LABEL[m]+" (kliknij, aby zmienić)";}
-    b.onclick=function(){var m=NEXT[stored()]; try{localStorage.setItem(KEY,m);}catch(e){} apply(m); paint();};
+    function paint(){
+      var m=stored();
+      b.innerHTML=ICON[m==="light"?"sun":m==="dark"?"moon":"auto"];
+      b.title=b.ariaLabel=LABEL[m]+" (kliknij, aby zmienić)";
+    }
+    b.onclick=function(){
+      var m=NEXT[stored()];
+      try{localStorage.setItem(KEY,m);}catch(e){}
+      apply(m); paint();
+    };
+    if(mq&&mq.addEventListener){
+      mq.addEventListener("change",function(){if(stored()==="auto") syncMeta("auto");});
+    }
     paint(); return b;
   }
 
@@ -84,15 +111,48 @@
   }
   function openDonate(){ if(!dlg) build(); if(!dlg.open) dlg.showModal(); }
 
+  /* --- strzałka powrotu na podstronach --- */
+  function ensureBack(h){
+    if(document.body.classList.contains("home")) return;
+    if(h.querySelector(".back-btn")) return;
+    var brand=h.querySelector(".brand");
+    var href=(brand&&brand.getAttribute("href"))||"../";
+    var left=document.createElement("div"); left.className="hdr-left";
+    var back=document.createElement("a");
+    back.className="back-btn";
+    back.href=href;
+    back.title=back.ariaLabel="Wróć na stronę główną";
+    back.textContent="←";
+    left.appendChild(back);
+    if(brand){
+      brand.parentNode.insertBefore(left,brand);
+      left.appendChild(brand);
+    }else{
+      h.insertBefore(left,h.firstChild);
+    }
+  }
+
   /* --- start --- */
   function init(){
     var h=document.querySelector("header");
     if(!h){h=document.createElement("header"); document.body.insertBefore(h,document.body.firstChild);}
+    ensureBack(h);
+
     var box=document.createElement("div"); box.className="hdr";
-    var tg=document.createElement("a"); tg.className="btn small ghost"; tg.href="https://t.me/placekwlb"; tg.target="_blank"; tg.rel="noopener"; tg.textContent="Kontakt";
+    var tg=document.createElement("a");
+    tg.className="icon-btn"; tg.href="https://t.me/placekwlb"; tg.target="_blank"; tg.rel="noopener";
+    tg.title=tg.ariaLabel="Kontakt (Telegram)"; tg.innerHTML=ICON.dm;
     box.appendChild(tg);
-    var d=document.createElement("button"); d.className="btn small"; d.type="button"; d.innerHTML='<span class="heart">'+ICON.heart+'</span>Donate'; d.onclick=openDonate;
-    if(COINS.length) box.appendChild(d); box.appendChild(themeBtn()); h.appendChild(box);
+
+    var d=document.createElement("button");
+    d.className="btn small donate-btn"; d.type="button";
+    d.innerHTML='<span class="heart">'+ICON.heart+'</span><span>Donate</span>';
+    d.onclick=openDonate;
+    if(COINS.length) box.appendChild(d);
+
+    box.appendChild(themeBtn());
+    h.appendChild(box);
+
     /* lista narzędzi: wystarczy <li><a href="exif/">exif cleaner</a></li> */
     document.querySelectorAll(".tools a").forEach(function(a){
       if(a.querySelector("strong")) return;
