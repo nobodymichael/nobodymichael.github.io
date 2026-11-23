@@ -78,7 +78,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
 <summary>Własne kolory</summary>
 <div class="colors">
 <div><label class="field" for="ink">Kod</label><input type="color" id="ink" value="#191919"></div>
-<div><label class="field" for="paper">Tło</label><input type="color" id="paper" value="#FBF9F4"></div>
+<div><label class="field" for="paper">Tło</label><input type="color" id="paper" value="#FFFFFF"></div>
 <button class="btn ghost small" id="reset" type="button">Domyślne</button>
 </div>
 </details>
@@ -123,7 +123,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
 <script src="../qrcode.js"></script>
 <script>
 (function(){
-  const $=i=>document.getElementById(i), INK0="#191919", PAP0="#FBF9F4";
+  const $=i=>document.getElementById(i), INK0="#191919", PAP0="#FFFFFF";
   qrcode.stringToBytes=qrcode.stringToBytesFuncs["UTF-8"];
   const inp=$("in"), box=$("qr"), status=$("status"), fmtEl=$("fmt"), png=$("png"), svgB=$("svg"), ink=$("ink"), paper=$("paper");
   let fmt="qr", cur=null, animate=true, ov=null;
