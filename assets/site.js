@@ -80,9 +80,9 @@
   function show(c){
     cur=c;
     var v=$("dview"), cp=$("dcopy");
-    cp.textContent="Kopiuj adres";
+    if(cp) cp.textContent="Kopiuj adres";
     ensureQr(function(){
-      if(cur!==c) return;
+      if(cur!==c||!v) return;
       var qrSvg=nmQr(c.addr,{q:2});
       v.innerHTML=
         '<div class="dmeta"><strong>'+esc(c.name)+' ('+esc(c.id)+')</strong><span class="dnet">'+esc(c.net||c.id)+'</span></div>'+
@@ -152,24 +152,30 @@
   }
 
   /* --- start --- */
+  var initialized=false;
   function init(){
+    if(initialized) return;
+    initialized=true;
+
     var h=document.querySelector("header");
     if(!h){h=document.createElement("header"); document.body.insertBefore(h,document.body.firstChild);}
     ensureBack(h);
 
-    var box=document.createElement("div"); box.className="hdr";
-    var tg=document.createElement("a");
-    tg.className="icon-btn"; tg.href="https://t.me/placekwlb"; tg.target="_blank"; tg.rel="noopener";
-    tg.innerHTML=ICON.dm+'<span>Kontakt</span>';
-    box.appendChild(tg);
+    if(!h.querySelector(".hdr")){
+      var box=document.createElement("div"); box.className="hdr";
+      var tg=document.createElement("a");
+      tg.className="icon-btn"; tg.href="https://t.me/placekwlb"; tg.target="_blank"; tg.rel="noopener";
+      tg.innerHTML=ICON.dm+'<span>Kontakt</span>';
+      box.appendChild(tg);
 
-    var d=document.createElement("button");
-    d.className="btn small donate-btn"; d.type="button";
-    d.innerHTML='<span class="heart">'+ICON.heart+'</span><span>Donate</span>';
-    d.onclick=openDonate;
-    if(COINS.length) box.appendChild(d);
+      var d=document.createElement("button");
+      d.className="btn small donate-btn"; d.type="button";
+      d.innerHTML='<span class="heart">'+ICON.heart+'</span><span>Donate</span>';
+      d.onclick=openDonate;
+      if(COINS.length) box.appendChild(d);
 
-    h.appendChild(box);
+      h.appendChild(box);
+    }
 
     document.querySelectorAll(".tools a").forEach(function(a){
       if(a.querySelector("strong")) return;
