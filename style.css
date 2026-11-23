@@ -8,7 +8,6 @@
   --glass:#141516;--edge:rgba(255,255,255,.15);--sheen:rgba(255,255,255,.045);
   --field:rgba(255,255,255,.05);--chip:rgba(255,255,255,.05);--line:rgba(255,255,255,.24);
   --sh:rgba(0,0,0,.5);--grid:rgba(255,255,255,.035);--glow:rgba(245,50,44,.18);
-  --pulse-h:rgba(245,50,44,.55);--pulse-v:rgba(255,74,68,.5);
   color-scheme:dark;
 }
 @media (prefers-color-scheme: light){
@@ -17,7 +16,6 @@
     --glass:rgba(255,255,255,.82);--edge:rgba(25,25,25,.16);--sheen:rgba(255,255,255,0);
     --field:rgba(25,25,25,.05);--chip:rgba(25,25,25,.05);--line:rgba(25,25,25,.25);
     --sh:rgba(25,25,25,.12);--grid:rgba(25,25,25,.05);--glow:rgba(245,50,44,.11);
-    --pulse-h:rgba(220,38,32,.48);--pulse-v:rgba(245,50,44,.42);
     color-scheme:light;
   }
 }
@@ -25,7 +23,7 @@
 html{background:var(--paper);color:var(--ink);font:500 17px/1.5 ui-sans-serif,"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
 body{margin:0;min-height:100vh;display:flex;flex-direction:column;position:relative;overflow-x:hidden}
 
-/* tło: delikatna siatka + czerwona poświata + przelatujące czerwone impulsy w liniach siatki */
+/* siatka 44px — stała, bez pływania */
 body::before{
   content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
@@ -33,25 +31,61 @@ body::before{
     linear-gradient(var(--grid) 1px,transparent 1px) 0 0/44px 44px,
     linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/44px 44px
 }
+
+/* czerwone linie biegnące po oczkach siatki (wielokrotności 44px) i rozwidlające się */
 body::after{
+  --g:44px;
   content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:
-    linear-gradient(90deg,transparent,var(--pulse-h),transparent) 0 0/14rem 1.5px no-repeat,
-    linear-gradient(180deg,transparent,var(--pulse-v),transparent) 0 0/1.5px 14rem no-repeat;
-  animation:gridFlyX 14s linear infinite,gridFlyY 19s linear infinite;
+  background-repeat:no-repeat;
+  background-image:
+    linear-gradient(90deg,transparent,var(--red) 55%,transparent),
+    linear-gradient(180deg,transparent,var(--red2) 55%,transparent),
+    linear-gradient(0deg,transparent,var(--red) 55%,transparent),
+    linear-gradient(90deg,transparent,var(--red2) 55%,transparent);
+  background-size:
+    11rem 2px,
+    2px 9rem,
+    2px 8rem,
+    9rem 2px;
+  animation:gridSplit 12s cubic-bezier(.25,.7,.25,1) infinite;
   opacity:.85
 }
-@keyframes gridFlyX{
-  0%{background-position:-14rem calc(44px * 4), calc(44px * 7) -14rem}
-  45%{background-position:calc(100% + 14rem) calc(44px * 4), calc(44px * 7) -14rem}
-  45.01%{background-position:-14rem calc(44px * 11), calc(44px * 7) -14rem}
-  100%{background-position:calc(100% + 14rem) calc(44px * 11), calc(44px * 7) -14rem}
-}
-@keyframes gridFlyY{
-  0%{background-position:-14rem 0, calc(100% - 132px) -14rem}
-  52%{background-position:-14rem 0, calc(100% - 132px) calc(100% + 14rem)}
-  52.01%{background-position:-14rem 0, calc(44px * 5) -14rem}
-  100%{background-position:-14rem 0, calc(44px * 5) calc(100% + 14rem)}
+
+@keyframes gridSplit{
+  0%{
+    background-position:
+      -12rem calc(var(--g) * 6),
+      calc(var(--g) * 9) calc(var(--g) * 6),
+      calc(var(--g) * 9) calc(var(--g) * 6),
+      calc(var(--g) * 9) calc(var(--g) * 10);
+    opacity:0
+  }
+  12%{
+    opacity:.9
+  }
+  45%{
+    background-position:
+      calc(var(--g) * 9 - 5.5rem) calc(var(--g) * 6),
+      calc(var(--g) * 9) calc(var(--g) * 6),
+      calc(var(--g) * 9) calc(var(--g) * 6 - 8rem),
+      calc(var(--g) * 9) calc(var(--g) * 10)
+  }
+  88%{
+    background-position:
+      calc(100% + 12rem) calc(var(--g) * 6),
+      calc(var(--g) * 9) calc(var(--g) * 15),
+      calc(var(--g) * 9) calc(var(--g) * 1),
+      calc(100% + 10rem) calc(var(--g) * 10);
+    opacity:.85
+  }
+  100%{
+    background-position:
+      calc(100% + 12rem) calc(var(--g) * 6),
+      calc(var(--g) * 9) calc(var(--g) * 15),
+      calc(var(--g) * 9) calc(var(--g) * 1),
+      calc(100% + 10rem) calc(var(--g) * 10);
+    opacity:0
+  }
 }
 
 .wrap,footer{position:relative;z-index:1}
@@ -81,6 +115,26 @@ body.home header{border-bottom:0}
 h1{font-weight:900;letter-spacing:-.045em;line-height:.95;font-size:clamp(2.75rem,10vw,5.5rem);margin:2rem 0 1rem;overflow-wrap:anywhere;animation:rise .6s cubic-bezier(.2,.7,.2,1) both}
 main h1{font-size:clamp(1.9rem,4.5vw,2.75rem);letter-spacing:-.035em;line-height:1;margin:1.5rem 0 .5rem}
 .home h1{font-size:clamp(2.6rem,13vw,9rem);line-height:1.02;margin-bottom:1.25rem}
+.home h1 strong{
+  font-weight:900;
+  letter-spacing:-.045em
+}
+.home h1 .nick-rest{
+  font-weight:400;
+  letter-spacing:-.025em
+}
+.home h1 .cursor{
+  display:inline-block;
+  color:var(--red);
+  font-weight:700;
+  margin-left:.02em;
+  animation:blinkUnder 1.05s steps(1,end) infinite
+}
+@keyframes blinkUnder{
+  0%,49%{opacity:1}
+  50%,100%{opacity:0}
+}
+
 .lead{max-width:36rem;font-size:1.05rem;font-weight:500;margin:0 0 1.5rem;color:var(--muted);animation:rise .6s .08s cubic-bezier(.2,.7,.2,1) both}
 .home .lead{margin-top:.5rem}
 label.field,p.field{display:block;font:700 .78rem/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 .6rem}
@@ -235,58 +289,3 @@ dialog.donate::backdrop{background:rgba(0,0,0,.6);-webkit-backdrop-filter:blur(6
   .qrgrid>div:first-child>.row{order:3}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
-/* ruch całej siatki w tle */
-body::before{
-  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:
-    radial-gradient(60rem 28rem at 88% -8%,var(--glow),transparent 70%),
-    linear-gradient(var(--grid) 1px,transparent 1px) 0 0/44px 44px,
-    linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/44px 44px;
-  animation:gridDrift 28s linear infinite
-}
-@keyframes gridDrift{
-  0%{
-    background-position:
-      0 0,
-      0 0,
-      0 0
-  }
-  50%{
-    background-position:
-      0 0,
-      44px 44px,
-      44px 44px
-  }
-  100%{
-    background-position:
-      0 0,
-      88px 0,
-      88px 0
-  }
-}
-
-/* animacja nagłówka *nobody*michael_ */
-.home h1 .star{
-  display:inline-block;
-  color:var(--red);
-  margin:0 .04em;
-  animation:starSpin 4.5s ease-in-out infinite
-}
-.home h1 .star:last-of-type{
-  animation-delay:-2.25s
-}
-.home h1 .cursor{
-  display:inline-block;
-  color:var(--red);
-  font-weight:900;
-  margin-left:.02em;
-  animation:blinkUnder 1.05s steps(1,end) infinite
-}
-@keyframes starSpin{
-  0%,100%{transform:rotate(0deg) scale(1)}
-  50%{transform:rotate(140deg) scale(1.16)}
-}
-@keyframes blinkUnder{
-  0%,49%{opacity:1}
-  50%,100%{opacity:0}
-}
