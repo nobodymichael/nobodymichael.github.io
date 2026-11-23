@@ -3,18 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#FBF9F4">
+<meta name="theme-color" content="#0d0e0f">
 <title>exif cleaner — nobodymichael</title>
 <link rel="stylesheet" href="../style.css">
 <script src="../site.js"></script>
 <style>
-.drop{border:2px dashed var(--line);border-radius:20px;padding:2.2rem 1rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:var(--field)}
-.drop:hover,.drop.drag{border-color:var(--red);background:rgba(245,50,44,.08)}
-.meta{margin-top:1.25rem;font-size:.92rem;display:grid;gap:.4rem}
-.meta div{padding:.5rem .75rem;border-radius:12px;background:var(--field);border:1px solid var(--edge);display:flex;justify-content:space-between;gap:1rem}
-.meta span:last-child{font-weight:700;text-align:right;word-break:break-all}
-.prev-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:.75rem}
-.prev-wrap img{max-width:100%;max-height:15rem;border-radius:14px;object-fit:contain}
+.drop{
+  position:relative;overflow:hidden;
+  border:2px dashed var(--line);border-radius:20px;padding:2.2rem 1rem;
+  text-align:center;cursor:pointer;
+  transition:border-color .2s,background .2s,transform .2s;
+  background:var(--field)
+}
+.drop:hover,.drop.drag{border-color:var(--red);background:rgba(245,50,44,.1);transform:translateY(-2px)}
+.drop.scanning::after{
+  content:"";position:absolute;left:0;right:0;top:0;height:3px;
+  background:var(--red);box-shadow:0 0 16px var(--red);
+  animation:exifScan .9s ease-in-out infinite
+}
+@keyframes exifScan{
+  0%{top:0;opacity:.95}
+  50%{top:calc(100% - 3px);opacity:1}
+  100%{top:0;opacity:.95}
+}
+
+.meta{margin-top:1.25rem;font-size:.92rem;display:grid;gap:.45rem}
+.meta div{
+  padding:.55rem .8rem;border-radius:12px;
+  background:var(--field);border:1.5px solid var(--edge);
+  display:flex;justify-content:space-between;gap:1rem;
+  animation:metaRow .28s cubic-bezier(.2,.8,.2,1) both
+}
+.meta div:nth-child(2){animation-delay:.04s}
+.meta div:nth-child(3){animation-delay:.08s}
+.meta div:nth-child(4){animation-delay:.12s}
+.meta div:nth-child(5){animation-delay:.16s}
+.meta div.gps-alert{border-color:var(--red);background:rgba(245,50,44,.12)}
+.meta span:last-child{font-weight:800;text-align:right;word-break:break-all}
+@keyframes metaRow{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+
+.prev-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:.75rem;animation:cleanPop .35s cubic-bezier(.2,.8,.2,1) both}
+.prev-wrap img{max-width:100%;max-height:15rem;border-radius:14px;object-fit:contain;box-shadow:0 10px 26px var(--sh)}
+@keyframes cleanPop{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 </style>
 </head>
 <body>
@@ -66,6 +96,7 @@ fileInp.onchange = () => { if (fileInp.files[0]) processFile(fileInp.files[0]); 
 clrBtn.onclick = () => {
   cleanBlob = null; fileInp.value = '';
   metaBox.hidden = true; metaBox.innerHTML = '';
+  if (prevUrl) { URL.revokeObjectURL(prevUrl); prevUrl = null; }
   box.innerHTML = '<span>Podgląd zdjęcia</span>';
   dlBtn.disabled = true; clrBtn.disabled = true; st.textContent = '';
 };
@@ -73,28 +104,35 @@ clrBtn.onclick = () => {
 dlBtn.onclick = () => {
   if (!cleanBlob) return;
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(cleanBlob);
+  const u = URL.createObjectURL(cleanBlob);
+  a.href = u;
   a.download = cleanName;
+  document.body.appendChild(a);
   a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 1000);
 };
 
 async function processFile(file) {
+  drop.classList.add('scanning');
   st.textContent = 'Analizowanie...';
   const buf = await file.arrayBuffer();
   const info = scanExif(new DataView(buf));
 
   metaBox.innerHTML = '';
   const rows = [
-    ['Nazwa pliku', file.name],
-    ['Rozmiar oryginału', (file.size / 1024).toFixed(1) + ' KB'],
-    ['Metadane', info.hasMeta ? 'Wykryto (' + info.tags.join(', ') + ')' : 'Nie wykryto'],
-    ['Urządzenie', info.device || 'Brak danych'],
-    ['Dane GPS', info.gps ? 'TAK (ryzyko wycieku lokalizacji)' : 'Nie wykryto']
+    ['Nazwa pliku', file.name, false],
+    ['Rozmiar oryginału', (file.size / 1024).toFixed(1) + ' KB', false],
+    ['Metadane', info.hasMeta ? 'Wykryto (' + info.tags.join(', ') + ')' : 'Nie wykryto', info.hasMeta],
+    ['Urządzenie', info.device || 'Brak danych', false],
+    ['Dane GPS', info.gps ? 'TAK (ryzyko wycieku lokalizacji)' : 'Nie wykryto', info.gps]
   ];
-  rows.forEach(([k, v]) => {
+  rows.forEach(([k, v, alert]) => {
     const d = document.createElement('div');
-    d.innerHTML = `<span>${k}</span><span>${v}</span>`;
+    if (alert) d.className = 'gps-alert';
+    const s1 = document.createElement('span'); s1.textContent = k;
+    const s2 = document.createElement('span'); s2.textContent = v;
+    d.append(s1, s2);
     metaBox.appendChild(d);
   });
   metaBox.hidden = false;
@@ -110,11 +148,13 @@ async function processFile(file) {
 
     const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
     const ext = outType === 'image/png' ? '.png' : '.jpg';
-    cleanName = file.name.replace(/\.[^.]+$/, '') + '_clean' + ext;
+    cleanName = (file.name.replace(/\.[^.]+$/, '') || 'obraz') + '_clean' + ext;
 
     canvas.toBlob(blob => {
-      cleanBlob = blob;
+      drop.classList.remove('scanning');
       URL.revokeObjectURL(url);
+      if (!blob) return;
+      cleanBlob = blob;
       if (prevUrl) URL.revokeObjectURL(prevUrl);
       prevUrl = URL.createObjectURL(blob);
       box.innerHTML = `<div class="prev-wrap"><img src="${prevUrl}" alt=""><small>${img.naturalWidth}×${img.naturalHeight} px • ${(blob.size / 1024).toFixed(1)} KB</small></div>`;
@@ -123,10 +163,14 @@ async function processFile(file) {
       st.textContent = 'Metadane usunięte. Plik gotowy do pobrania.';
     }, outType, 0.94);
   };
+  img.onerror = () => {
+    drop.classList.remove('scanning');
+    URL.revokeObjectURL(url);
+    st.textContent = 'Nie udało się przetworzyć obrazu.';
+  };
   img.src = url;
 }
 
-/* czyta tagi TIFF/EXIF: wskaźnik GPS (0x8825), producent i model aparatu */
 function tiff(v, s) {
   const le = v.getUint16(s) === 0x4949, u16 = o => v.getUint16(o, le), u32 = o => v.getUint32(o, le), r = {};
   if (u16(s + 2) !== 42) return r;
@@ -148,11 +192,11 @@ function scanExif(v) {
   const merge = r => { if (r.gps) out.gps = true; if (r.make || r.model) out.device = [r.make, r.model].filter(Boolean).join(' '); };
   const ascii = (o, n) => { let t = ''; for (let i = 0; i < n && o + i < v.byteLength; i++) t += String.fromCharCode(v.getUint8(o + i)); return t; };
   try {
-    if (v.getUint16(0) === 0xFFD8) {                       // JPEG
+    if (v.getUint16(0) === 0xFFD8) {
       let o = 2;
       while (o + 4 < v.byteLength) {
         const m = v.getUint16(o);
-        if (m === 0xFFDA || (m & 0xFF00) !== 0xFF00) break; // początek obrazu
+        if (m === 0xFFDA || (m & 0xFF00) !== 0xFF00) break;
         const len = v.getUint16(o + 2);
         if (m === 0xFFE1) {
           if (ascii(o + 4, 6) === 'Exif\0\0') { add('EXIF'); merge(tiff(v, o + 10)); }
@@ -160,7 +204,7 @@ function scanExif(v) {
         } else if (m === 0xFFED) add('IPTC');
         o += 2 + len;
       }
-    } else if (ascii(1, 3) === 'PNG') {                    // PNG
+    } else if (ascii(1, 3) === 'PNG') {
       let o = 8;
       while (o + 12 <= v.byteLength) {
         const len = v.getUint32(o), t = ascii(o + 4, 4);
@@ -169,7 +213,7 @@ function scanExif(v) {
         else if (t === 'IDAT') break;
         o += 12 + len;
       }
-    } else if (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WEBP') { // WebP
+    } else if (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WEBP') {
       let o = 12;
       while (o + 8 <= v.byteLength) {
         const t = ascii(o, 4), len = v.getUint32(o + 4, true);
