@@ -8,7 +8,7 @@
     {id:"ETH", name:"Ethereum", addr:"0x437E14fd07BbCD3AD923B39a4c7bB89E8ccBD5a7"},
     {id:"SOL", name:"Solana",   addr:"4u6XcbSN6CVGkUAZ6ej9r5SHgvKECQif5RBUU5UDMCpN"},
     {id:"TRX", name:"Tron",     addr:"TREsDGqxv2vzresMsU3yoDojqzhr1eBkYy"},
-    {id:"XMR", name:"Monero",   addr:""}
+    {id:"XMR", name:"Monero",   addr:"test"}
   ];
   /* =================================== */
 
