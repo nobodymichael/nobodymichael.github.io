@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#FBF9F4">
+<meta name="theme-color" content="#0d0e0f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23191919'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%23F5322C'/%3E%3C/svg%3E">
 <title>qrgen | nobodymichael</title>
 <link rel="stylesheet" href="../style.css">
@@ -13,37 +13,37 @@
 @media(min-width:48rem){.qgrid{grid-template-columns:1fr 22rem;grid-template-areas:"in out" "opt out";align-items:start}}
 .qgrid>*{animation:rise .6s both}.qgrid>.q-out{animation-delay:.1s}.qgrid>.q-opt{animation-delay:.2s}
 .q-in{grid-area:in}.q-out{grid-area:out}.q-opt{grid-area:opt}
-.glass{padding:1.25rem;border:1px solid var(--edge);border-radius:28px;background:linear-gradient(135deg,var(--sheen),transparent 45%),var(--glass);-webkit-backdrop-filter:blur(34px) saturate(200%);backdrop-filter:blur(34px) saturate(200%);box-shadow:inset 0 1.5px 0 var(--edge),inset 0 -1px 0 var(--edge),0 16px 40px var(--sh);color:var(--ink)}
+.glass{padding:1.25rem;border:1.5px solid var(--edge);border-radius:28px;background:linear-gradient(135deg,var(--sheen),transparent 45%),var(--glass);-webkit-backdrop-filter:blur(34px) saturate(200%);backdrop-filter:blur(34px) saturate(200%);box-shadow:inset 0 1.5px 0 var(--edge),inset 0 -1px 0 var(--edge),0 16px 40px var(--sh);color:var(--ink)}
 .q-out .qr{width:min(100%,22rem);margin-inline:auto}
 .q-out .row{justify-content:center;margin:1rem 0 0}
 .q-out .row .btn{flex:1 1 8rem}
 @media(max-width:47.99rem){.q-out .qr{width:min(100%,19rem)}.qr.empty{aspect-ratio:auto;min-height:6rem}}
 .q-in .status{margin:.6rem 0 0}
-summary{cursor:pointer;font-weight:700;margin-top:1.25rem;padding:.25rem 0}
+summary{cursor:pointer;font-weight:800;margin-top:1.25rem;padding:.25rem 0}
 summary:hover{color:var(--red)}
 .colors{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;margin-top:.75rem}
 .colors .field{margin-bottom:.4rem}
-input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(--edge);border-radius:14px;background:var(--field);cursor:pointer;display:block}
+input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:2px solid var(--edge);border-radius:14px;background:var(--field);cursor:pointer;display:block}
 
 /* ===== druk ===== */
 .print{margin:1.5rem 0}
-.print h2{margin:0 0 .25rem}
-.print .hint{margin:0 0 1rem;opacity:.7}
+.print h2{margin:0 0 .25rem;font-weight:900}
+.print .hint{margin:0 0 1rem;opacity:.75}
 .pgrid{display:grid;gap:1.25rem;grid-template-columns:1fr}
 @media(min-width:60rem){.pgrid{grid-template-columns:19rem 1fr;align-items:start}}
 .pf{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:.75rem 1rem}
 .pf>div{min-width:0}
-.pf input[type=number],.pf select{width:100%;box-sizing:border-box;height:3rem;padding:0 .75rem;border:1px solid var(--edge);border-radius:14px;background:var(--field);color:var(--ink);font:inherit}
-.pf .chk{display:flex;align-items:center;gap:.5rem;cursor:pointer;grid-column:1/-1}
+.pf input[type=number],.pf select{width:100%;box-sizing:border-box;height:3rem;padding:0 .75rem;border:2px solid var(--edge);border-radius:14px;background:var(--field);color:var(--ink);font:inherit;font-weight:600}
+.pf .chk{display:flex;align-items:center;gap:.5rem;cursor:pointer;grid-column:1/-1;font-weight:700}
 .pf .chk input{width:1.1rem;height:1.1rem;accent-color:var(--red)}
 .pf .span{grid-column:1/-1}
 .pf .row{margin:0;display:flex;flex-wrap:wrap;gap:.5rem}
-.p-ed{touch-action:none;user-select:none;-webkit-user-select:none;border:1px solid var(--edge);border-radius:18px;background:var(--field);padding:.5rem;outline:none}
+.p-ed{touch-action:none;user-select:none;-webkit-user-select:none;border:2px solid var(--edge);border-radius:18px;background:var(--field);padding:.5rem;outline:none}
 .p-ed:focus-visible{box-shadow:0 0 0 2px var(--red)}
 .p-ed svg{display:block;width:100%;height:auto;max-height:28rem}
 .p-ed [data-code]{cursor:grab}
 .p-ed.drag [data-code]{cursor:grabbing}
-.p-sub{font-weight:700;margin:1.25rem 0 .5rem}
+.p-sub{font-weight:800;margin:1.25rem 0 .5rem}
 .print[hidden]{display:none}
 .p-prev{display:flex;flex-wrap:wrap;gap:.75rem}
 .p-prev>div{flex:0 1 13rem;min-width:0}
@@ -124,17 +124,18 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
 <script>
 (function(){
   const $=i=>document.getElementById(i), INK0="#191919", PAP0="#FFFFFF";
-  qrcode.stringToBytes=qrcode.stringToBytesFuncs["UTF-8"];
+  if(window.qrcode && qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs["UTF-8"]){
+    qrcode.stringToBytes=qrcode.stringToBytesFuncs["UTF-8"];
+  }
   const inp=$("in"), box=$("qr"), status=$("status"), fmtEl=$("fmt"), png=$("png"), svgB=$("svg"), ink=$("ink"), paper=$("paper");
   let fmt="qr", cur=null, animate=true, ov=null;
-  const C=()=>ov||{i:ink.value,p:paper.value};
+  const C=()=>ov||{i:ink.value||INK0,p:paper.value||PAP0};
 
   const NATIVE=[["qr","QR"],["code128","Code 128"],["ean13","EAN-13"]];
   const BW=[["azteccode","Aztec"],["datamatrix","Data Matrix"],["pdf417","PDF417"],["microqrcode","Micro QR"],["code39","Code 39"]];
   const SAMPLE={qr:"nobodymichael",code128:"qrgen",ean13:"590123412345",azteccode:"nobodymichael",datamatrix:"nobodymichael",pdf417:"nobodymichael",microqrcode:"12345",code39:"QRGEN"};
   const two=f=>f!=="code128"&&f!=="ean13"&&f!=="code39";
 
-  /* blokada znaków zależna od formatu */
   function rule(){
     if(fmt==="ean13") return {bad:/\D/g,max:13,mode:"numeric",ph:"12 lub 13 cyfr"};
     if(fmt==="code39") return {bad:/[^A-Z0-9 \-.$\/+%]/g,up:1,ph:"A-Z, 0-9 i - . $ / + %"};
@@ -146,9 +147,8 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
     let v=inp.value; if(r.up) v=v.toUpperCase(); v=v.replace(r.bad,""); if(r.max) v=v.slice(0,r.max);
     if(v!==inp.value){inp.value=v; inp.classList.remove("deny"); void inp.offsetWidth; inp.classList.add("deny");}
   }
-  function setRule(){const r=rule(); inp.inputMode=r&&r.mode||"text"; inp.placeholder=r&&r.ph||""; sanitize();}
+  function setRule(){const r=rule(); inp.inputMode=(r&&r.mode)||"text"; inp.placeholder=(r&&r.ph)||""; sanitize();}
 
-  /* link: dopisz https:// gdy to sama domena */
   const DOMAIN=/^(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}|localhost|\d{1,3}(?:\.\d{1,3}){3})(?::\d{1,5})?(?:[\/?#]\S*)?$/i;
   function compose(){
     const raw=inp.value, t=raw.trim();
@@ -160,12 +160,11 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
     return {text:t,kind:"text"};
   }
 
-  /* generatory SVG */
   const wrap=(w,h,d,x)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges"><rect width="${w}" height="${h}" fill="${C().p}"/><path d="${d}" fill="${C().i}"/>${x||""}</svg>`;
   function barSvg(bits,label){
     const qz=10, top=6, bh=56; let d="", i=0;
     while(i<bits.length){ if(bits[i]==="1"){let j=i; while(bits[j]==="1") j++; d+=`M${qz+i} ${top}h${j-i}v${bh}h-${j-i}z`; i=j;} else i++; }
-    const w=bits.length+qz*2, lab=label.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+    const w=bits.length+qz*2, lab=String(label).replace(/&/g,"&amp;").replace(/</g,"&lt;");
     return wrap(w,top+bh+16,d,`<text x="${w/2}" y="${top+bh+12}" text-anchor="middle" font-family="monospace" font-size="9" fill="${C().i}" shape-rendering="auto">${lab}</text>`);
   }
   const C128="212222 222122 222221 121223 121322 131222 122213 122312 132212 221213 221312 231212 112232 122132 122231 113222 123122 123221 223211 221132 221231 213212 223112 312131 311222 321122 321221 312212 322112 322211 212123 212321 232121 111323 131123 131321 112313 132113 132311 211313 231113 231311 112133 112331 132131 113123 113321 133121 313121 211331 231131 213113 213311 213131 311123 311321 331121 312113 312311 332111 314111 221411 431111 111224 111422 121124 121421 141122 141221 112214 112412 122114 122411 142112 142211 241211 221114 413111 241112 134111 111242 121142 121241 114212 124112 124211 411212 421112 421211 212141 214121 412121 111143 111341 131141 114113 114311 411113 411311 113141 114131 311141 411131 211412 211214 211232 2331112".split(" ");
@@ -193,18 +192,28 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
     return barSvg(bits+"101",t);
   }
   function makeSvg(f,text){
-    if(f==="qr") return nmQr(text,{ink:C().i,paper:C().p});
+    if(f==="qr"){
+      if(typeof window.nmQr==="function") return window.nmQr(text,{ink:C().i,paper:C().p});
+      const qr=qrcode(0,"M"); qr.addData(text); qr.make();
+      const n=qr.getModuleCount(), q=4, w=n+q*2; let d="";
+      for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(qr.isDark(r,c)) d+=`M${c+q} ${r+q}h1v1h-1z`;
+      return wrap(w,w,d);
+    }
     if(f==="code128") return code128(text);
     if(f==="ean13") return ean13(text);
-    const o={bcid:f,text,scale:3,barcolor:C().i.slice(1),backgroundcolor:C().p.slice(1),paddingwidth:8,paddingheight:8};
+    if(!window.bwipjs||typeof bwipjs.toSVG!=="function") throw {pl:"Moduł tego formatu nie załadował się lokalnie."};
+    const o={bcid:f,text,scale:3,barcolor:C().i.replace(/^#/,""),backgroundcolor:C().p.replace(/^#/,""),paddingwidth:8,paddingheight:8};
     if(f==="code39") o.includetext=true;
     return bwipjs.toSVG(o);
   }
 
-  /* kontrast kolorów */
-  function lum(h){const c=[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255).map(x=>x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)); return .2126*c[0]+.7152*c[1]+.0722*c[2];}
+  function lum(h){
+    if(!/^#[0-9a-fA-F]{6}$/.test(h)) return 0.5;
+    const c=[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255).map(x=>x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4));
+    return .2126*c[0]+.7152*c[1]+.0722*c[2];
+  }
   function warn(){
-    const a=lum(ink.value), b=lum(paper.value), r=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+    const a=lum(C().i), b=lum(C().p), r=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);
     return r<3?"Za mały kontrast, kod może się nie zeskanować.":a>b?"Odwrócone kolory: nie każdy czytnik odczyta taki kod.":"";
   }
 
@@ -212,7 +221,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
   function render0(){
     const info=compose(); cur=null; png.disabled=svgB.disabled=true; status.textContent="";
     if(info.kind==="empty"){empty("Kod pojawi się tutaj."); animate=true; return;}
-    try{cur=makeSvg(fmt,info.text);}catch(e){empty("Nie da się utworzyć kodu."); status.textContent=e.pl||"Za dużo tekstu albo znaki niedozwolone w tym formacie."; return;}
+    try{cur=makeSvg(fmt,info.text);}catch(e){empty("Nie da się utworzyć kodu."); status.textContent=(e&&e.pl)||"Za dużo tekstu albo znaki niedozwolone w tym formacie."; return;}
     box.classList.remove("empty"); box.innerHTML=cur; png.disabled=svgB.disabled=false;
     if(animate){box.classList.remove("scan"); void box.offsetWidth; box.classList.add("scan"); animate=false;}
     status.textContent=info.kind==="linkAdded"?"Wykryto link, dodano https://: "+info.text:warn()||(info.kind==="link"?"Wykryto link.":"");
@@ -220,19 +229,32 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
   function render(){render0(); P.update();}
   box.addEventListener("animationend",e=>{if(e.target===box) box.classList.remove("scan");});
 
-  /* eksport */
   function save(blob,name){
-    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    if(!blob) return;
+    const a=document.createElement("a"); const u=URL.createObjectURL(blob); a.href=u; a.download=name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),1000);
   }
-  const dims=s=>{const m=/viewBox=["']\s*[\d.-]+[\s,]+[\d.-]+[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(s); return m?[+m[1],+m[2]]:[300,300];};
+  const dims=s=>{
+    const m=/viewBox=["']\s*[\d.-]+[\s,]+[\d.-]+[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(s||"");
+    const w=m?+m[1]:300, h=m?+m[2]:300;
+    return [w>0?w:300, h>0?h:300];
+  };
   svgB.onclick=()=>{if(cur) save(new Blob([cur],{type:"image/svg+xml"}),"kod.svg");};
   png.onclick=()=>{
     if(!cur) return;
-    const [w,h]=dims(cur), k=Math.max(1,1200/Math.max(w,h)), W=Math.round(w*k), H=Math.round(h*k);
+    const [w,h]=dims(cur), k=Math.max(1,1200/Math.max(w,h)), W=Math.min(4096,Math.round(w*k)), H=Math.min(4096,Math.round(h*k));
     const s=cur.replace(/<svg[^>]*>/,m=>m.replace(/\s(width|height)=("[^"]*"|'[^']*')/g,"").replace("<svg",`<svg width="${W}" height="${H}"`));
     const img=new Image(), url=URL.createObjectURL(new Blob([s],{type:"image/svg+xml"}));
-    img.onload=()=>{const cv=document.createElement("canvas"); cv.width=W; cv.height=H; cv.getContext("2d").drawImage(img,0,0,W,H); URL.revokeObjectURL(url); cv.toBlob(b=>save(b,"kod.png"),"image/png");};
+    img.onload=()=>{
+      const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+      const ctx=cv.getContext("2d");
+      if(ctx){
+        ctx.fillStyle=C().p; ctx.fillRect(0,0,W,H);
+        ctx.drawImage(img,0,0,W,H);
+        cv.toBlob(b=>{URL.revokeObjectURL(url); save(b,"kod.png");},"image/png");
+      }else{URL.revokeObjectURL(url);}
+    };
+    img.onerror=()=>URL.revokeObjectURL(url);
     img.src=url;
   };
 
@@ -241,17 +263,24 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
     const el={};
     ["bw","bh","cw","grid","snap","o","m","n","cut","ed","prev","msg","print","c","ch","cv"].forEach(k=>el[k]=$("p_"+k));
     let pagesArr=[1];
-    const S={x:0,y:0,centered:true,gx:false,gy:false}; /* mm, lewy górny róg kodu w plakietce */
-    const mm=v=>Math.round(v*100)/100;
+    const S={x:0,y:0,centered:true,gx:false,gy:false};
+    const mm=v=>Math.round((Number.isFinite(v)?v:0)*100)/100;
     const cm=v=>String(mm(v/10)).replace(".",",");
-    const num=(e,d,min)=>{const v=parseFloat(String(e.value).replace(",","."));return v>=(min||0.001)?v:d;};
+    const num=(e,d,min,max)=>{
+      const raw=parseFloat(String(e.value||"").replace(",","."));
+      if(!Number.isFinite(raw)) return d;
+      const lo=min==null?0.001:min;
+      const v=Math.max(lo,raw);
+      return max==null?v:Math.min(max,v);
+    };
 
     function geom(){
-      const bw=num(el.bw,8)*10, bh=num(el.bh,5)*10, cw=num(el.cw,3)*10;
+      const bw=num(el.bw,80,5,290)*10, bh=num(el.bh,50,5,290)*10, cw=num(el.cw,30,3,290)*10;
       const [dw,dh]=cur?dims(cur):[1,1];
-      const m=Math.max(0,parseFloat(el.m.value)||0), land=el.o.value==="l";
+      const m=num(el.m,10,0,50), land=el.o.value==="l";
       const PW=land?297:210, PH=land?210:297;
-      return {bw,bh,cw,ch:cw*dh/dw,m,land,PW,PH,g:parseFloat(el.grid.value)||0};
+      const g=parseFloat(el.grid.value);
+      return {bw,bh,cw,ch:cw*(dh/(dw||1)),m,land,PW,PH,g:Number.isFinite(g)&&g>=0?g:0};
     }
     function clamp(G){
       const lx=Math.min(0,G.bw-G.cw), hx=Math.max(0,G.bw-G.cw), ly=Math.min(0,G.bh-G.ch), hy=Math.max(0,G.bh-G.ch);
@@ -260,25 +289,26 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
     function place(G){
       if(S.centered){S.x=(G.bw-G.cw)/2; S.y=(G.bh-G.ch)/2;}
       clamp(G);
-      S.gx=Math.abs(S.x+G.cw/2-G.bw/2)<.01; S.gy=Math.abs(S.y+G.ch/2-G.bh/2)<.01;
+      S.gx=Math.abs((S.x+G.cw/2)-(G.bw/2))<.05;
+      S.gy=Math.abs((S.y+G.ch/2)-(G.bh/2))<.05;
     }
     function codeSvg(G,x,y,extra){
       if(!cur) return "";
       const i0=cur.indexOf("<svg"), i1=cur.indexOf(">",i0)+1, i2=cur.lastIndexOf("</svg>");
+      if(i0<0||i1<=i0||i2<=i1) return "";
       const vb=(/viewBox=["']([^"']+)["']/.exec(cur.slice(i0,i1))||[0,"0 0 300 300"])[1];
       return `<svg x="${mm(x)}" y="${mm(y)}" width="${mm(G.cw)}" height="${mm(G.ch)}" viewBox="${vb}" preserveAspectRatio="none"${extra||""}>${cur.slice(i1,i2)}</svg>`;
     }
 
-    /* edytor plakietki */
     function edit(G){
       const pad=5, parts=[];
       if(G.g>=1&&G.g<=10){
-        let d=""; for(let x=G.g;x<G.bw-.001;x+=G.g) d+=`M${mm(x)} 0V${G.bh}`; for(let y=G.g;y<G.bh-.001;y+=G.g) d+=`M0 ${mm(y)}H${G.bw}`;
+        let d=""; for(let x=G.g;x<G.bw-.001;x+=G.g) d+=`M${mm(x)} 0V${mm(G.bh)}`; for(let y=G.g;y<G.bh-.001;y+=G.g) d+=`M0 ${mm(y)}H${mm(G.bw)}`;
         parts.push(`<path d="${d}" stroke="#8886" stroke-width=".12" fill="none"/>`);
       }
-      const cx=G.bw/2, cy=G.bh/2;
-      parts.push(`<path d="M${cx} 0V${G.bh}" stroke="${S.gx?"#F5322C":"#8888"}" stroke-width="${S.gx?.35:.15}" stroke-dasharray="1.5 1.5" fill="none"/>`);
-      parts.push(`<path d="M0 ${cy}H${G.bw}" stroke="${S.gy?"#F5322C":"#8888"}" stroke-width="${S.gy?.35:.15}" stroke-dasharray="1.5 1.5" fill="none"/>`);
+      const cx=mm(G.bw/2), cy=mm(G.bh/2);
+      parts.push(`<path d="M${cx} 0V${mm(G.bh)}" stroke="${S.gx?"#F5322C":"#8888"}" stroke-width="${S.gx?.35:.15}" stroke-dasharray="1.5 1.5" fill="none"/>`);
+      parts.push(`<path d="M0 ${cy}H${mm(G.bw)}" stroke="${S.gy?"#F5322C":"#8888"}" stroke-width="${S.gy?.35:.15}" stroke-dasharray="1.5 1.5" fill="none"/>`);
       if(cur){
         parts.push(`<g data-code="1">${codeSvg(G,S.x,S.y,' shape-rendering="crispEdges"')}</g>`);
         parts.push(`<rect x="${mm(S.x)}" y="${mm(S.y)}" width="${mm(G.cw)}" height="${mm(G.ch)}" fill="none" stroke="#F5322C" stroke-width=".25" stroke-dasharray="1 1" pointer-events="none"/>`);
@@ -287,16 +317,16 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
       }
       el.ed.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad} ${mm(G.bw+pad*2)} ${mm(G.bh+pad*2)}">
 <rect width="${mm(G.bw)}" height="${mm(G.bh)}" fill="#fff" stroke="#191919" stroke-width=".35"/>${parts.join("")}
-<text x="${mm(G.bw/2)}" y="${mm(G.bh+3.6)}" text-anchor="middle" font-size="2.8" fill="#888">${cm(G.bw)} × ${cm(G.bh)} cm</text></svg>`;
+<text x="${cx}" y="${mm(G.bh+3.6)}" text-anchor="middle" font-size="2.8" fill="#888">${cm(G.bw)} × ${cm(G.bh)} cm</text></svg>`;
     }
 
-    /* arkusz A4 */
     function layout(G){
-      const aw=G.PW-2*G.m, ah=G.PH-2*G.m, fits=G.bw<=aw+.001&&G.bh<=ah+.001;
-      const n=Math.max(1,Math.min(500,Math.floor(num(el.n,1,1))));
+      const aw=Math.max(0,G.PW-2*G.m), ah=Math.max(0,G.PH-2*G.m);
+      const fits=G.bw>0&&G.bh>0&&G.bw<=aw+.001&&G.bh<=ah+.001;
+      const n=Math.max(1,Math.min(500,Math.floor(num(el.n,1,1,500))));
       let cols=1, rows=1;
       if(fits){cols=Math.max(1,Math.floor((aw+.001)/G.bw)); rows=Math.max(1,Math.floor((ah+.001)/G.bh));}
-      const cap=cols*rows;
+      const cap=Math.max(1,cols*rows);
       return {fits,cols,rows,n,cap,pages:Math.ceil(n/cap)};
     }
     function pageSvg(G,Lt,count,printMode){
@@ -322,7 +352,6 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
       el.msg.textContent=(!Lt.fits?"Plakietka nie mieści się na A4 po odjęciu marginesów. ":"")+`Kopii: ${Lt.n}, na arkusz: ${Lt.cap}, arkuszy: ${Lt.pages}.`+(pagesArr.length>6?" Podgląd pokazuje pierwsze 6.":"");
     }
 
-    /* przeciąganie, magnes na środek, siatka, strzałki */
     const THR=1.5;
     function snapPos(G,x,y,fine){
       if(el.snap.checked&&G.g>0&&!fine){x=Math.round(x/G.g)*G.g; y=Math.round(y/G.g)*G.g;}
@@ -332,14 +361,16 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
     }
     let drag=null;
     function toMm(e){
-      const s=el.ed.querySelector("svg"); if(!s) return null;
+      const s=el.ed.querySelector("svg"); if(!s||typeof s.createSVGPoint!=="function") return null;
       const pt=s.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
       const m=s.getScreenCTM(); return m?pt.matrixTransform(m.inverse()):null;
     }
     el.ed.addEventListener("pointerdown",e=>{
       if(!cur||!e.target.closest("[data-code]")) return;
       const p=toMm(e); if(!p) return;
-      drag={dx:p.x-S.x,dy:p.y-S.y}; el.ed.classList.add("drag"); el.ed.setPointerCapture(e.pointerId); el.ed.focus({preventScroll:true}); e.preventDefault();
+      drag={dx:p.x-S.x,dy:p.y-S.y}; el.ed.classList.add("drag");
+      try{el.ed.setPointerCapture(e.pointerId);}catch(_){}
+      el.ed.focus({preventScroll:true}); e.preventDefault();
     });
     el.ed.addEventListener("pointermove",e=>{
       if(!drag) return;
@@ -369,23 +400,24 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
       const f=document.createElement("iframe");
       f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";
       document.body.appendChild(f);
-      const d=f.contentWindow.document; d.open(); d.write(html); d.close();
-      setTimeout(()=>{f.contentWindow.focus(); f.contentWindow.print(); setTimeout(()=>f.remove(),60000);},300);
+      const d=f.contentWindow&&f.contentWindow.document;
+      if(!d){f.remove(); return;}
+      d.open(); d.write(html); d.close();
+      setTimeout(()=>{try{f.contentWindow.focus(); f.contentWindow.print();}catch(_){} setTimeout(()=>f.remove(),60000);},300);
     };
     return {update};
   })();
 
-  /* pokaż / ukryj sekcję druku */
   const pt=$("pt"), ps=$("print");
   pt.onclick=()=>{
     const open=ps.hidden; ps.hidden=!open; pt.setAttribute("aria-expanded",open); pt.textContent=open?"Ukryj druk":"Drukuj…";
     if(open){P.update(); ps.scrollIntoView({behavior:"smooth",block:"start"});}
   };
 
-  /* przyciski formatów z miniaturami */
-  function thumb(f){ov={i:INK0,p:"#FFFFFF"}; let s=""; try{s=makeSvg(f,SAMPLE[f]);}catch(e){} ov=null; return s;}
+  function thumb(f){ov={i:INK0,p:"#FFFFFF"}; let s=""; try{s=makeSvg(f,SAMPLE[f]);}catch(_){} ov=null; return s;}
   function addFormats(list){
     list.forEach(([v,n])=>{
+      if($("fmt_"+v)) return;
       const r=document.createElement("input"), l=document.createElement("label");
       r.type="radio"; r.name="fmt"; r.id="fmt_"+v; r.checked=v===fmt;
       r.onchange=()=>{fmt=v; animate=true; setRule(); render();};
