@@ -1,465 +1,855 @@
-/* Rozkrój płyt — logika układu i obliczeń (w stylu site.js) */
 (() => {
-  const $ = (sel, root = document) => root.querySelector(sel);
-  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const STORAGE_KEY = "lebercut_projects_v1";
 
-  const onReady = (fn) => {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", fn, { once: true });
-    } else {
-      fn();
-    }
+  const state = {
+    tab: "projekt",
+    projectName: "Projekt 1",
+    board: {
+      length: 2800,
+      width: 2070,
+      material: "Płyta wiórowa (meblowa)",
+      decor: "Dąb sonoma",
+      grain: "along_length",
+      kerf: 4
+    },
+    margins: {
+      top: 20,
+      bottom: 20,
+      left: 20,
+      right: 20
+    },
+    pricing: {
+      cutPrice: 0,
+      edgePrice: 0,
+      calcMode: "parts_m2",
+      materialPrice: 0
+    },
+    parts: [
+      { id: 1, name: "A", length: 300, rotL: false, width: 200, rotW: false, qty: 1, edges: { D1: true, D2: true, S1: false, S2: false } },
+      { id: 2, name: "B", length: 300, rotL: false, width: 200, rotW: false, qty: 1, edges: { D1: false, D2: true, S1: false, S2: true } },
+      { id: 3, name: "C", length: 300, rotL: false, width: 200, rotW: false, qty: 1, edges: { D1: false, D2: true, S1: false, S2: true } }
+    ],
+    nextId: 4,
+    verified: true,
+    activeSheet: 0,
+    zoom: 1,
+    showCuts: true,
+    showDims: true,
+    layout: null
   };
 
-  const esc = (str) =>
-    String(str ?? "").replace(/[&<>"']/g, (ch) => ({
+  const $ = (id) => document.getElementById(id);
+
+  function esc(v) {
+    return String(v ?? "").replace(/[&<>"']/g, (c) => ({
       "&": "&amp;",
       "<": "&lt;",
       ">": "&gt;",
       '"': "&quot;",
       "'": "&#39;"
-    }[ch]));
-
-  const state = {
-    parts: [
-      { id: 1, w: 800, h: 400, qty: 4, label: "Formatka A", edges: { top: true, bottom: true, left: false, right: false } },
-      { id: 2, w: 600, h: 400, qty: 2, label: "Półka B", edges: { top: true, bottom: false, left: false, right: false } }
-    ],
-    nextId: 3
-  };
-
-  function readConfig() {
-    const sw = Math.max(10, +$("#cutSw").value || 2800);
-    const sh = Math.max(10, +$("#cutSh").value || 2070);
-    const tL = Math.max(0, +$("#cutTL").value || 0);
-    const tR = Math.max(0, +$("#cutTR").value || 0);
-    const tT = Math.max(0, +$("#cutTT").value || 0);
-    const tB = Math.max(0, +$("#cutTB").value || 0);
-    const kerf = Math.max(0, +$("#cutKerf").value || 3.2);
-    const grain = $("#cutGrain").value;
-    const price = Math.max(0, +$("#cutPrice").value || 5);
-    const uw = Math.max(0, sw - tL - tR);
-    const uh = Math.max(0, sh - tT - tB);
-    return { sw, sh, tL, tR, tT, tB, kerf, grain, price, uw, uh };
+    }[c]));
   }
 
-  function edgeSummary(part) {
-    const labels = [];
-    let mm = 0;
-    if (part.edges.top) { labels.push("Góra"); mm += part.w; }
-    if (part.edges.bottom) { labels.push("Dół"); mm += part.w; }
-    if (part.edges.left) { labels.push("Lewo"); mm += part.h; }
-    if (part.edges.right) { labels.push("Prawo"); mm += part.h; }
-    return {
-      text: labels.length ? labels.join(", ") : "brak",
-      mb: (mm * part.qty) / 1000
-    };
+  function fmtNum(n, dec = 2) {
+    return Number(n || 0).toLocaleString("pl-PL", {
+      minimumFractionDigits: dec,
+      maximumFractionDigits: dec
+    });
   }
 
-  function renderPartsList(price) {
-    const box = $("#cutPartsList");
-    if (!state.parts.length) {
-      box.innerHTML = `<div class="cut-item-sub" style="text-align:center;padding:1rem">Brak formatek na liście.</div>`;
-      return;
+  function usableArea() {
+    const uL = Math.max(0, Number(state.board.length || 0) - Number(state.margins.left || 0) - Number(state.margins.right || 0));
+    const uW = Math.max(0, Number(state.board.width || 0) - Number(state.margins.top || 0) - Number(state.margins.bottom || 0));
+    return { uL, uW };
+  }
+
+  function partEdgeMb(part) {
+    const L = Number(part.length || 0);
+    const W = Number(part.width || 0);
+    const q = Math.max(0, Number(part.qty || 0));
+    let mmPerPiece = 0;
+    if (part.edges.D1) mmPerPiece += L;
+    if (part.edges.D2) mmPerPiece += L;
+    if (part.edges.S1) mmPerPiece += W;
+    if (part.edges.S2) mmPerPiece += W;
+    return (mmPerPiece * q) / 1000;
+  }
+
+  function computeLayout() {
+    const { uL, uW } = usableArea();
+    const k = Math.max(0, Number(state.board.kerf || 0));
+    const allowRotate = state.board.grain === "none";
+
+    const queue = [];
+    const skipped = [];
+
+    for (const p of state.parts) {
+      const q = Math.max(0, Math.floor(Number(p.qty || 0)));
+      const L = Number(p.length || 0);
+      const W = Number(p.width || 0);
+      if (L <= 0 || W <= 0 || q <= 0) continue;
+
+      for (let i = 0; i < q; i++) {
+        const opts = [];
+        if (L <= uL + 1e-6 && W <= uW + 1e-6) {
+          opts.push({ w: L, h: W, rotated: false });
+        }
+        if (allowRotate && W <= uL + 1e-6 && L <= uW + 1e-6 && Math.abs(L - W) > 1e-6) {
+          opts.push({ w: W, h: L, rotated: true });
+        }
+        if (!opts.length) {
+          skipped.push({ name: p.name, length: L, width: W });
+        } else {
+          queue.push({
+            id: p.id,
+            name: p.name,
+            origLength: L,
+            origWidth: W,
+            edges: { ...p.edges },
+            opts,
+            sortKey: Math.max(L, W) * 100000 + L * W
+          });
+        }
+      }
     }
 
-    box.innerHTML = state.parts.map((p) => {
-      const ed = edgeSummary(p);
-      return `
-        <div class="cut-item">
-          <div>
-            <div class="cut-item-main">${p.w} × ${p.h} mm · ${p.qty} szt.${p.label ? ` · ${esc(p.label)}` : ""}</div>
-            <div class="cut-item-sub">Okleina: ${esc(ed.text)} (${ed.mb.toFixed(2)} mb) · Cięcia: ${p.qty} (${(p.qty * price).toFixed(0)} zł)</div>
-          </div>
-          <div style="display:flex;gap:0.35rem">
-            <button type="button" class="btn btn-ghost btn-sm" data-cut-dec="${p.id}">-</button>
-            <button type="button" class="btn btn-ghost btn-sm" data-cut-inc="${p.id}">+</button>
-            <button type="button" class="btn btn-ghost btn-sm" data-cut-del="${p.id}">×</button>
-          </div>
-        </div>
-      `;
-    }).join("");
+    queue.sort((a, b) => b.sortKey - a.sortKey);
 
-    $$("[data-cut-del]", box).forEach((btn) => {
-      btn.addEventListener("click", () => {
-        state.parts = state.parts.filter((x) => x.id !== +btn.dataset.cutDel);
-        renderCut();
-      });
-    });
+    const sheets = [];
+    let cutLineCounter = 1;
 
-    $$("[data-cut-inc]", box).forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const item = state.parts.find((x) => x.id === +btn.dataset.cutInc);
-        if (item) { item.qty += 1; renderCut(); }
-      });
-    });
+    function placeOnSheet(sheet, item) {
+      let best = null;
 
-    $$("[data-cut-dec]", box).forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const item = state.parts.find((x) => x.id === +btn.dataset.cutDec);
-        if (item && item.qty > 1) { item.qty -= 1; renderCut(); }
-      });
-    });
-  }
+      for (const opt of item.opts) {
+        for (let sIdx = 0; sIdx < sheet.shelves.length; sIdx++) {
+          const sh = sheet.shelves[sIdx];
+          const neededW = sh.usedW > 0 ? sh.usedW + k + opt.w : opt.w;
+          if (opt.h <= sh.h + 1e-6 && neededW <= uL + 1e-6) {
+            const x = Number(state.margins.left || 0) + (sh.usedW > 0 ? sh.usedW + k : 0);
+            const y = sh.y;
+            const waste = (sh.h - opt.h) * opt.w;
+            if (!best || waste < best.waste) {
+              best = { sIdx, isNew: false, x, y, w: opt.w, h: opt.h, rotated: opt.rotated, waste };
+            }
+          }
+        }
 
-  function tryPlace(sheet, item, cfg) {
-    let best = null;
-    const k = cfg.kerf;
-
-    for (const opt of item.opts) {
-      for (let i = 0; i < sheet.shelves.length; i += 1) {
-        const s = sheet.shelves[i];
-        const addW = s.usedW > 0 ? k + opt.w : opt.w;
-        if (opt.h <= s.h && s.usedW + addW <= cfg.uw + 1e-6) {
-          const x = cfg.tL + (s.usedW > 0 ? s.usedW + k : 0);
-          const waste = (s.h - opt.h) * opt.w;
+        const prev = sheet.shelves[sheet.shelves.length - 1];
+        const usedY = prev ? (prev.y - Number(state.margins.top || 0)) + prev.h : 0;
+        const neededH = usedY > 0 ? usedY + k + opt.h : opt.h;
+        if (opt.w <= uL + 1e-6 && neededH <= uW + 1e-6) {
+          const x = Number(state.margins.left || 0);
+          const y = Number(state.margins.top || 0) + (usedY > 0 ? usedY + k : 0);
+          const waste = 1e9 + (uW - neededH) * uL;
           if (!best || waste < best.waste) {
-            best = { shelfIdx: i, isNew: false, x, y: s.y, w: opt.w, h: opt.h, rot: opt.rot, waste };
+            best = { sIdx: sheet.shelves.length, isNew: true, x, y, w: opt.w, h: opt.h, rotated: opt.rotated, waste };
           }
         }
       }
 
-      const prev = sheet.shelves[sheet.shelves.length - 1];
-      const usedY = prev ? (prev.y - cfg.tT) + prev.h : 0;
-      const addH = usedY > 0 ? k + opt.h : opt.h;
-      if (opt.w <= cfg.uw + 1e-6 && usedY + addH <= cfg.uh + 1e-6) {
-        const y = cfg.tT + (usedY > 0 ? usedY + k : 0);
-        const waste = 1e6 + (cfg.uh - (usedY + addH)) * cfg.uw;
-        if (!best || waste < best.waste) {
-          best = { shelfIdx: sheet.shelves.length, isNew: true, x: cfg.tL, y, w: opt.w, h: opt.h, rot: opt.rot, waste };
-        }
+      if (!best) return false;
+
+      if (best.isNew) {
+        sheet.shelves.push({ y: best.y, h: best.h, usedW: best.w });
+      } else {
+        sheet.shelves[best.sIdx].usedW = (best.x - Number(state.margins.left || 0)) + best.w;
       }
+
+      const nameCount = sheet.placements.filter((it) => it.name === item.name).length + 1;
+      const totalSame = state.parts.find((x) => x.id === item.id)?.qty || 1;
+
+      sheet.placements.push({
+        id: item.id,
+        name: item.name,
+        seqLabel: `${item.name} ${nameCount}/${totalSame}`,
+        x: best.x,
+        y: best.y,
+        w: best.w,
+        h: best.h,
+        origLength: item.origLength,
+        origWidth: item.origWidth,
+        rotated: best.rotated,
+        edges: item.edges
+      });
+      return true;
     }
 
-    if (!best) return false;
-
-    if (best.isNew) {
-      sheet.shelves.push({ y: best.y, h: best.h, usedW: best.w });
-    } else {
-      sheet.shelves[best.shelfIdx].usedW = (best.x - cfg.tL) + best.w;
-    }
-
-    sheet.placements.push({
-      x: best.x,
-      y: best.y,
-      w: best.w,
-      h: best.h,
-      origW: item.w,
-      origH: item.h,
-      label: item.label,
-      edges: item.edges,
-      rot: best.rot
-    });
-    return true;
-  }
-
-  function packSheets(cfg, alerts) {
-    const queue = [];
-
-    state.parts.forEach((p) => {
-      for (let i = 0; i < p.qty; i += 1) {
-        const opts = [];
-        if (p.w <= cfg.uw && p.h <= cfg.uh) {
-          opts.push({ w: p.w, h: p.h, rot: false });
-        }
-        if (cfg.grain === "none" && p.h <= cfg.uw && p.w <= cfg.uh && p.w !== p.h) {
-          opts.push({ w: p.h, h: p.w, rot: true });
-        }
-        if (!opts.length) {
-          alerts.push(`Formatka ${p.w}×${p.h} mm nie mieści się w polu roboczym ${cfg.uw}×${cfg.uh} mm.`);
-        } else {
-          queue.push({ ...p, opts, mainDim: Math.max(p.w, p.h) });
-        }
-      }
-    });
-
-    queue.sort((a, b) => b.mainDim - a.mainDim || (b.w * b.h) - (a.w * a.h));
-
-    const sheets = [];
-    queue.forEach((item) => {
+    for (const item of queue) {
       let placed = false;
       for (const sh of sheets) {
-        if (tryPlace(sh, item, cfg)) { placed = true; break; }
+        if (placeOnSheet(sh, item)) {
+          placed = true;
+          break;
+        }
       }
       if (!placed) {
         const sh = { shelves: [], placements: [] };
-        if (tryPlace(sh, item, cfg)) sheets.push(sh);
+        if (placeOnSheet(sh, item)) {
+          sheets.push(sh);
+        }
       }
-    });
-
-    return sheets;
-  }
-
-  function renderSheetSvg(sh, idx, cfg) {
-    const pad = 65;
-    const vbW = cfg.sw + pad * 2;
-    const vbH = cfg.sh + pad * 2;
-    const sw = Math.max(2.5, cfg.sw / 360);
-    const dash = `${sw * 4} ${sw * 3}`;
-
-    const trimRects = [];
-    if (cfg.tT > 0) trimRects.push(`<rect x="0" y="0" width="${cfg.sw}" height="${cfg.tT}" fill="rgba(239,68,68,0.18)" stroke="#ef4444" stroke-width="${sw}" stroke-dasharray="${dash}"/>`);
-    if (cfg.tB > 0) trimRects.push(`<rect x="0" y="${cfg.sh - cfg.tB}" width="${cfg.sw}" height="${cfg.tB}" fill="rgba(239,68,68,0.18)" stroke="#ef4444" stroke-width="${sw}" stroke-dasharray="${dash}"/>`);
-    if (cfg.tL > 0) trimRects.push(`<rect x="0" y="${cfg.tT}" width="${cfg.tL}" height="${cfg.uh}" fill="rgba(239,68,68,0.18)" stroke="#ef4444" stroke-width="${sw}" stroke-dasharray="${dash}"/>`);
-    if (cfg.tR > 0) trimRects.push(`<rect x="${cfg.sw - cfg.tR}" y="${cfg.tT}" width="${cfg.tR}" height="${cfg.uh}" fill="rgba(239,68,68,0.18)" stroke="#ef4444" stroke-width="${sw}" stroke-dasharray="${dash}"/>`);
-
-    const wasteRects = [];
-    let maxBot = cfg.tT;
-    sh.shelves.forEach((s) => {
-      if (s.y + s.h > maxBot) maxBot = s.y + s.h;
-      const rx = cfg.tL + s.usedW;
-      const rw = (cfg.tL + cfg.uw) - rx;
-      if (rw > 1) {
-        wasteRects.push(`<rect x="${rx}" y="${s.y}" width="${rw}" height="${s.h}" fill="rgba(148,163,184,0.12)" stroke="#94a3b8" stroke-width="${sw * 0.9}" stroke-dasharray="${dash}"/>`);
-      }
-    });
-    const botH = (cfg.tT + cfg.uh) - maxBot;
-    if (botH > 1) {
-      wasteRects.push(`<rect x="${cfg.tL}" y="${maxBot}" width="${cfg.uw}" height="${botH}" fill="rgba(148,163,184,0.12)" stroke="#94a3b8" stroke-width="${sw * 0.9}" stroke-dasharray="${dash}"/>`);
     }
 
-    const pieces = sh.placements.map((p, n) => {
-      const fs = Math.max(20, Math.min(44, Math.min(p.w, p.h) * 0.16));
-      const cx = p.x + p.w / 2;
-      const cy = p.y + p.h / 2;
-      const ew = sw * 2.8;
+    const totalBoardAreaM2 = sheets.length * ((Number(state.board.length || 0) * Number(state.board.width || 0)) / 1e6);
+    const totalPartsAreaM2 = state.parts.reduce(
+      (acc, p) => acc + ((Number(p.length || 0) * Number(p.width || 0) * Math.max(0, Number(p.qty || 0))) / 1e6),
+      0
+    );
+    const totalPartsCount = state.parts.reduce((acc, p) => acc + Math.max(0, Number(p.qty || 0)), 0);
+    const totalEdgeMb = state.parts.reduce((acc, p) => acc + partEdgeMb(p), 0);
+    const utilPct = totalBoardAreaM2 > 0 ? Math.min(100, (totalPartsAreaM2 / totalBoardAreaM2) * 100) : 0;
+    const wastePct = Math.max(0, 100 - utilPct);
+    const wasteM2 = Math.max(0, totalBoardAreaM2 - totalPartsAreaM2);
 
-      const eT = p.rot ? p.edges.left : p.edges.top;
-      const eB = p.rot ? p.edges.right : p.edges.bottom;
-      const eL = p.rot ? p.edges.bottom : p.edges.left;
-      const eR = p.rot ? p.edges.top : p.edges.right;
+    // Wygeneruj linie cięć dla każdej płyty
+    sheets.forEach((sh) => {
+      const cutLines = [];
+      if (Number(state.margins.top || 0) > 0) {
+        cutLines.push({ num: cutLineCounter++, x1: 0, y1: state.margins.top, x2: state.board.length, y2: state.margins.top });
+      }
+      if (Number(state.margins.bottom || 0) > 0) {
+        const yBot = state.board.width - state.margins.bottom;
+        cutLines.push({ num: cutLineCounter++, x1: 0, y1: yBot, x2: state.board.length, y2: yBot });
+      }
+      if (Number(state.margins.left || 0) > 0) {
+        cutLines.push({ num: cutLineCounter++, x1: state.margins.left, y1: 0, x2: state.margins.left, y2: state.board.width });
+      }
+      if (Number(state.margins.right || 0) > 0) {
+        const xRight = state.board.length - state.margins.right;
+        cutLines.push({ num: cutLineCounter++, x1: xRight, y1: 0, x2: xRight, y2: state.board.width });
+      }
+      sh.placements.forEach((pl) => {
+        cutLines.push({ num: cutLineCounter++, x1: pl.x + pl.w, y1: pl.y, x2: pl.x + pl.w, y2: pl.y + pl.h });
+        cutLines.push({ num: cutLineCounter++, x1: pl.x, y1: pl.y + pl.h, x2: pl.x + pl.w, y2: pl.y + pl.h });
+      });
+      sh.cutLines = cutLines;
+    });
 
-      const edgeLines = [];
-      if (eT) edgeLines.push(`<line x1="${p.x}" y1="${p.y}" x2="${p.x + p.w}" y2="${p.y}" stroke="#f59e0b" stroke-width="${ew}"/>`);
-      if (eB) edgeLines.push(`<line x1="${p.x}" y1="${p.y + p.h}" x2="${p.x + p.w}" y2="${p.y + p.h}" stroke="#f59e0b" stroke-width="${ew}"/>`);
-      if (eL) edgeLines.push(`<line x1="${p.x}" y1="${p.y}" x2="${p.x}" y2="${p.y + p.h}" stroke="#f59e0b" stroke-width="${ew}"/>`);
-      if (eR) edgeLines.push(`<line x1="${p.x + p.w}" y1="${p.y}" x2="${p.x + p.w}" y2="${p.y + p.h}" stroke="#f59e0b" stroke-width="${ew}"/>`);
+    state.layout = {
+      sheets,
+      skipped,
+      totalBoardAreaM2,
+      totalPartsAreaM2,
+      totalPartsCount,
+      totalEdgeMb,
+      utilPct,
+      wastePct,
+      wasteM2
+    };
+    if (state.activeSheet >= sheets.length) {
+      state.activeSheet = 0;
+    }
+  }
+
+  function markDirty() {
+    state.verified = false;
+    updateVerifyBadge();
+  }
+
+  function updateVerifyBadge() {
+    const badge = $("lcVerifyBadge");
+    if (!badge) return;
+    if (state.verified && state.layout) {
+      badge.textContent = "Wynik aktualny i zweryfikowany";
+      badge.className = "btn small ghost";
+      badge.style.background = "rgba(34,197,94,.22)";
+      badge.style.borderColor = "rgba(34,197,94,.65)";
+      badge.style.color = "var(--ink)";
+    } else {
+      badge.textContent = "Wymaga optymalizacji";
+      badge.className = "btn small ghost";
+      badge.style.background = "rgba(245,158,11,.18)";
+      badge.style.borderColor = "rgba(245,158,11,.65)";
+      badge.style.color = "var(--ink)";
+    }
+  }
+
+  function switchTab(tabName) {
+    state.tab = tabName;
+    document.querySelectorAll("[data-lc-tab]").forEach((btn) => {
+      btn.classList.toggle("is-active", btn.dataset.lcTab === tabName);
+    });
+    document.querySelectorAll("[data-lc-view]").forEach((sec) => {
+      sec.hidden = sec.dataset.lcView !== tabName;
+    });
+    renderAll();
+  }
+
+  function renderProject() {
+    $("lcProjName").value = state.projectName;
+    $("lcBoardLen").value = state.board.length;
+    $("lcBoardWid").value = state.board.width;
+    $("lcMaterial").value = state.board.material;
+    $("lcDecor").value = state.board.decor;
+    $("lcGrain").value = state.board.grain;
+    $("lcKerf").value = state.board.kerf;
+
+    $("lcMarTop").value = state.margins.top;
+    $("lcMarBot").value = state.margins.bottom;
+    $("lcMarLeft").value = state.margins.left;
+    $("lcMarRight").value = state.margins.right;
+
+    const { uL, uW } = usableArea();
+    $("lcUsableBox").textContent = `Obszar roboczy: ${uL} × ${uW} mm`;
+
+    $("lcCutPrice").value = state.pricing.cutPrice;
+    $("lcEdgePrice").value = state.pricing.edgePrice;
+    $("lcCalcMode").value = state.pricing.calcMode;
+    $("lcMatPrice").value = state.pricing.materialPrice;
+  }
+
+  function renderParts() {
+    const tbody = $("lcPartsBody");
+    const positionsCount = state.parts.length;
+    const totalQty = state.parts.reduce((s, p) => s + Math.max(0, Number(p.qty || 0)), 0);
+    const totalArea = state.parts.reduce((s, p) => s + (Number(p.length || 0) * Number(p.width || 0) * Math.max(0, Number(p.qty || 0))) / 1e6, 0);
+    const totalEdge = state.parts.reduce((s, p) => s + partEdgeMb(p), 0);
+
+    $("lcPartsTopStats").textContent = `${positionsCount} pozycje · ${totalQty} szt. · ${fmtNum(totalArea, 2)} m² formatek`;
+    $("lcPartsBottomStats").innerHTML = `
+      <span>Suma okleiny: ${fmtNum(totalEdge, 2)} mb</span>
+      <span>Suma formatek: ${totalQty} szt.</span>
+      <span>Powierzchnia wszystkich formatek: ${fmtNum(totalArea, 3)} m²</span>
+    `;
+
+    tbody.innerHTML = state.parts.map((p, idx) => {
+      const m2One = (Number(p.length || 0) * Number(p.width || 0)) / 1e6;
+      const m2Sum = m2One * Math.max(0, Number(p.qty || 0));
+      const edgeMb = partEdgeMb(p);
 
       return `
-        <rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="rgba(37,137,232,0.28)" stroke="#38bdf8" stroke-width="${sw}"/>
-        ${edgeLines.join("")}
-        <text x="${cx}" y="${cy - fs * 0.2}" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-family="monospace" font-weight="800" font-size="${fs}">${p.origW}×${p.origH}</text>
-        <text x="${cx}" y="${cy + fs * 0.95}" text-anchor="middle" dominant-baseline="middle" fill="#bae6fd" font-family="sans-serif" font-size="${fs * 0.64}">#${n + 1} ${esc(p.label)}${p.rot ? " [90°]" : ""}</text>
+        <tr>
+          <td class="lc-num">${idx + 1}</td>
+          <td><input type="text" class="lc-cell-input is-text" data-field="name" data-id="${p.id}" value="${esc(p.name)}"></td>
+          <td><input type="number" class="lc-cell-input" data-field="length" data-id="${p.id}" value="${p.length}" min="1" step="1"></td>
+          <td style="text-align:center"><input type="checkbox" data-field="rotL" data-id="${p.id}" ${p.rotL ? "checked" : ""}></td>
+          <td><input type="number" class="lc-cell-input" data-field="width" data-id="${p.id}" value="${p.width}" min="1" step="1"></td>
+          <td style="text-align:center"><input type="checkbox" data-field="rotW" data-id="${p.id}" ${p.rotW ? "checked" : ""}></td>
+          <td class="lc-num">${fmtNum(m2One, 3)}</td>
+          <td><input type="number" class="lc-cell-input" data-field="qty" data-id="${p.id}" value="${p.qty}" min="1" step="1"></td>
+          <td class="lc-num">${fmtNum(m2Sum, 3)}</td>
+          <td>${esc(state.board.decor || state.board.material)}</td>
+          <td>
+            <div class="lc-edges">
+              ${["D1", "D2", "S1", "S2"].map((k) => `
+                <button type="button" class="lc-edge-btn ${p.edges[k] ? "is-on" : ""}" data-edge="${k}" data-id="${p.id}">${k}</button>
+              `).join("")}
+            </div>
+          </td>
+          <td class="lc-num">${fmtNum(edgeMb, 2)}</td>
+          <td>
+            <div style="display:flex;gap:.35rem">
+              <button type="button" class="btn small ghost" data-dup="${p.id}">Duplikuj</button>
+              <button type="button" class="btn small ghost" data-del="${p.id}">Usuń</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function render2D() {
+    if (!state.layout) computeLayout();
+    const lay = state.layout;
+    const sheets = lay.sheets;
+
+    const verifyBox = $("lc2dVerifyBox");
+    if (lay.skipped.length) {
+      verifyBox.style.borderColor = "rgba(239,68,68,.65)";
+      verifyBox.style.background = "rgba(239,68,68,.15)";
+      verifyBox.textContent = `Uwaga: ${lay.skipped.length} szt. formatek nie mieści się w obszarze roboczym (${usableArea().uL} × ${usableArea().uW} mm).`;
+    } else {
+      verifyBox.style.borderColor = "rgba(34,197,94,.55)";
+      verifyBox.style.background = "rgba(34,197,94,.14)";
+      verifyBox.textContent = `Układ zweryfikowany: brak nachodzenia, rzaz ${state.board.kerf} mm uwzględniony, każde cięcie przechodzi między formatkami, struktura zachowana.`;
+    }
+
+    $("lc2dSheetsTitle").textContent = `Płyty (${sheets.length})`;
+    $("lc2dSheetList").innerHTML = sheets.map((sh, i) => {
+      const shArea = (Number(state.board.length || 0) * Number(state.board.width || 0)) / 1e6;
+      const usedArea = sh.placements.reduce((s, it) => s + (it.w * it.h) / 1e6, 0);
+      const pct = shArea > 0 ? ((usedArea / shArea) * 100).toFixed(1) : "0.0";
+      return `
+        <button type="button" class="lc-sheet-btn ${i === state.activeSheet ? "is-active" : ""}" data-sheet-idx="${i}">
+          Płyta ${i + 1} · ${esc(state.board.material)} — ${esc(state.board.decor)} · ${pct}%
+        </button>
       `;
     }).join("");
 
-    return `
-      <div class="cut-sheet">
-        <div class="cut-sheet-head">
-          <strong>Płyta #${idx + 1} (${cfg.sw}×${cfg.sh} mm)</strong>
-          <span>Formatek: ${sh.placements.length} · Odjęcie: ${cfg.tL}/${cfg.tR}/${cfg.tT}/${cfg.tB} mm · Rzaz: ${cfg.kerf} mm</span>
-        </div>
-        <div class="cut-svg-wrap">
-          <svg viewBox="${-pad} ${-pad} ${vbW} ${vbH}" xmlns="http://www.w3.org/2000/svg">
-            <rect x="0" y="0" width="${cfg.sw}" height="${cfg.sh}" fill="rgba(15,23,42,0.75)" stroke="#2589e8" stroke-width="${sw * 1.2}"/>
-            ${trimRects.join("")}
-            ${wasteRects.join("")}
-            ${pieces}
-            <text x="${cfg.sw / 2}" y="-20" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="32">${cfg.sw} mm</text>
-            <text x="-20" y="${cfg.sh / 2}" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="32" transform="rotate(-90 -20 ${cfg.sh / 2})">${cfg.sh} mm</text>
-          </svg>
-        </div>
-        <div class="cut-legend">
-          <span><i style="background:#38bdf8"></i>Formatka</span>
-          <span><i style="background:#f59e0b"></i>Bok oklejany</span>
-          <span><i style="background:rgba(239,68,68,0.35);border:1px dashed #ef4444"></i>Odjęcie krawędzi</span>
-          <span><i style="background:rgba(148,163,184,0.25);border:1px dashed #94a3b8"></i>Odpad kreskowany</span>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderCut() {
-    const cfg = readConfig();
-    $("#cutUsableInfo").textContent = `Pole robocze: ${cfg.uw} × ${cfg.uh} mm`;
-    renderPartsList(cfg.price);
-
-    const alerts = [];
-    if (cfg.uw <= 0 || cfg.uh <= 0) {
-      alerts.push("Odjęcie krawędzi przekracza wymiar płyty — brak pola roboczego.");
-    }
-
-    const sheets = packSheets(cfg, alerts);
-    const totalParts = state.parts.reduce((acc, p) => acc + p.qty, 0);
-    const totalCost = totalParts * cfg.price;
-    const totalEdgeMb = state.parts.reduce((acc, p) => acc + edgeSummary(p).mb, 0);
-
-    $("#cutAlerts").innerHTML = alerts.map((a) => `<div class="cut-alert">${esc(a)}</div>`).join("");
-
-    const grainLabel = cfg.grain === "h" ? "poziomo" : cfg.grain === "v" ? "pionowo" : "brak (90°)";
-    $("#cutKpis").innerHTML = `
-      <div class="cut-kpi"><small>Płyty bazowe</small><strong>${sheets.length} szt.</strong><span>${cfg.sw}×${cfg.sh} mm</span></div>
-      <div class="cut-kpi"><small>Cięcia (1 form.=1)</small><strong>${totalParts} szt.</strong><span>${totalCost.toFixed(0)} zł</span></div>
-      <div class="cut-kpi"><small>Okleina</small><strong>${totalEdgeMb.toFixed(2)} mb</strong><span>suma boków</span></div>
-      <div class="cut-kpi"><small>Rzaz / słoje</small><strong>${cfg.kerf} mm</strong><span>${grainLabel}</span></div>
-    `;
-
-    $("#cutPrintMeta").textContent = `LEBERCUT | Płyta: ${cfg.sw}×${cfg.sh} mm | Odjęcie: L=${cfg.tL} P=${cfg.tR} G=${cfg.tT} D=${cfg.tB} mm | Rzaz: ${cfg.kerf} mm | Cięcia: ${totalParts} (${totalCost.toFixed(0)} zł) | Okleina: ${totalEdgeMb.toFixed(2)} mb`;
-
-    $("#cutSheetsOut").innerHTML = sheets.length
-      ? sheets.map((sh, i) => renderSheetSvg(sh, i, cfg)).join("")
-      : `<div class="cut-item-sub" style="text-align:center;padding:1.5rem">Dodaj formatki, aby zobaczyć plan płyty.</div>`;
-
-    $("#cutSummaryTable").innerHTML = `
-      <table class="cut-table">
-        <thead>
-          <tr>
-            <th>Lp.</th>
-            <th>Formatka (mm)</th>
-            <th>Ilość</th>
-            <th>Oklejane boki</th>
-            <th>Okleina</th>
-            <th>Cięcia / zł</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${state.parts.map((p, idx) => {
-            const ed = edgeSummary(p);
-            return `
-              <tr>
-                <td>${idx + 1}</td>
-                <td><strong>${p.w} × ${p.h}</strong>${p.label ? ` (${esc(p.label)})` : ""}</td>
-                <td>${p.qty} szt.</td>
-                <td>${esc(ed.text)}</td>
-                <td>${ed.mb.toFixed(2)} mb</td>
-                <td>${p.qty} (${(p.qty * cfg.price).toFixed(0)} zł)</td>
-              </tr>
-            `;
-          }).join("")}
-          <tr>
-            <td colspan="2"><strong>RAZEM</strong></td>
-            <td><strong>${totalParts} szt.</strong></td>
-            <td>—</td>
-            <td><strong>${totalEdgeMb.toFixed(2)} mb</strong></td>
-            <td><strong>${totalParts} (${totalCost.toFixed(0)} zł)</strong></td>
-          </tr>
-        </tbody>
-      </table>
-    `;
-  }
-
-  function renderEqual() {
-    const len = Math.max(0, +$("#eqLen").value || 0);
-    const n = Math.max(1, Math.floor(+$("#eqN").value || 1));
-    const kerf = Math.max(0, +$("#eqKerf").value || 3.2);
-    const trim = Math.max(0, +$("#eqTrim").value || 0);
-    const cuts = Math.max(0, n - 1);
-    const loss = cuts * kerf;
-    const net = len - trim - loss;
-    const piece = net / n;
-
-    $("#eqCutsHint").textContent = `Liczba cięć przelotowych: ${cuts}`;
-
-    if (len <= 0 || net <= 0) {
-      $("#eqOut").innerHTML = `<div class="cut-alert">Za mało materiału po odjęciu rzazów (${loss.toFixed(1)} mm) i odcięcia (${trim} mm).</div>`;
+    const activeSh = sheets[state.activeSheet] || sheets[0];
+    if (!activeSh) {
+      $("lc2dCanvasHeadMeta").textContent = "Brak płyt do wyświetlenia";
+      $("lc2dPartsOnSheet").innerHTML = "";
+      $("lc2dSvgHolder").innerHTML = "";
       return;
     }
 
-    const marks = [];
-    let cur = trim;
-    for (let i = 0; i < cuts; i += 1) {
-      cur += piece;
-      marks.push(`Cięcie #${i + 1}: <strong>${cur.toFixed(1)} mm</strong>`);
-      cur += kerf;
+    const shArea = (Number(state.board.length || 0) * Number(state.board.width || 0)) / 1e6;
+    const usedArea = activeSh.placements.reduce((s, it) => s + (it.w * it.h) / 1e6, 0);
+    const util = shArea > 0 ? Math.min(100, (usedArea / shArea) * 100) : 0;
+    const waste = Math.max(0, 100 - util);
+    const wasteM2 = Math.max(0, shArea - usedArea);
+    const grainText = state.board.grain === "along_length"
+      ? "wzdłuż długości (poziomo)"
+      : state.board.grain === "along_width"
+        ? "wzdłuż szerokości (pionowo)"
+        : "dowolny (obrót 90°)";
+
+    $("lc2dCanvasHeadMeta").textContent = `Płyta ${state.activeSheet + 1} z ${sheets.length} — ${esc(state.board.material)} — ${esc(state.board.decor)} Formatek: ${activeSh.placements.length} · wykorzystanie ${fmtNum(util, 1)}% · odpad ${fmtNum(waste, 1)}% (${fmtNum(wasteM2, 2)} m²)`;
+
+    $("lc2dPartsTitle").textContent = `Formatki na płycie ${state.activeSheet + 1}`;
+    $("lc2dPartsOnSheet").innerHTML = activeSh.placements.map((pl) => `
+      <li class="lc-part-item">
+        <span>Formatka ${esc(pl.seqLabel)}</span>
+        ${Math.round(pl.w)} × ${Math.round(pl.h)} mm${pl.rotated ? " (90°)" : ""}
+      </li>
+    `).join("");
+
+    const L = Math.max(200, Number(state.board.length || 2800));
+    const W = Math.max(200, Number(state.board.width || 2070));
+    const padL = state.showDims ? 65 : 16;
+    const padT = state.showDims ? 55 : 16;
+    const padR = 20;
+    const padB = 20;
+    const vbW = L + padL + padR;
+    const vbH = W + padT + padB;
+
+    const hatchLines = [];
+    const step = 48;
+    for (let d = -W; d < L + W; d += step) {
+      const x1 = Math.max(0, d);
+      const y1 = Math.max(0, -d);
+      const x2 = Math.min(L, d + W);
+      const y2 = Math.min(W, L - d);
+      if (x2 > x1 && y2 > y1) {
+        hatchLines.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#9ca3af" stroke-width="1.5"/>`);
+      }
     }
 
-    const segs = [];
-    if (trim > 0) segs.push(`<div class="cut-bar-trim" style="width:${(trim / len) * 100}%">odpad</div>`);
-    for (let i = 0; i < n; i += 1) {
-      segs.push(`<div class="cut-bar-part" style="width:${(piece / len) * 100}%">${piece.toFixed(1)}</div>`);
-      if (i < cuts) segs.push(`<div class="cut-bar-kerf" style="width:${Math.max(2, (kerf / len) * 100)}%"></div>`);
+    const marginRects = [];
+    if (state.margins.top > 0) {
+      marginRects.push(`<rect x="0" y="0" width="${L}" height="${state.margins.top}" fill="#f3f4f6" stroke="#4b5563" stroke-width="2" stroke-dasharray="8 6"/>`);
+    }
+    if (state.margins.bottom > 0) {
+      marginRects.push(`<rect x="0" y="${W - state.margins.bottom}" width="${L}" height="${state.margins.bottom}" fill="#f3f4f6" stroke="#4b5563" stroke-width="2" stroke-dasharray="8 6"/>`);
+    }
+    if (state.margins.left > 0) {
+      marginRects.push(`<rect x="0" y="0" width="${state.margins.left}" height="${W}" fill="#f3f4f6" stroke="#4b5563" stroke-width="2" stroke-dasharray="8 6"/>`);
+    }
+    if (state.margins.right > 0) {
+      marginRects.push(`<rect x="${L - state.margins.right}" y="0" width="${state.margins.right}" height="${W}" fill="#f3f4f6" stroke="#4b5563" stroke-width="2" stroke-dasharray="8 6"/>`);
     }
 
-    $("#eqOut").innerHTML = `
-      <div class="cut-eq-box">
-        <div class="cut-item-sub">Długość 1 równego kawałka</div>
-        <div class="cut-eq-val">${piece.toFixed(2)} mm</div>
-        <div class="cut-item-sub" style="margin-top:0.35rem">${n} części · ${cuts} cięć · strata rzazów: ${loss.toFixed(1)} mm (${kerf} mm/rzaz)</div>
-        <div class="cut-bar">${segs.join("")}</div>
+    const pieceSvgs = activeSh.placements.map((pl) => {
+      const fs = Math.max(18, Math.min(34, Math.min(pl.w, pl.h) * 0.22));
+      const edgeMarks = [];
+      if (pl.edges.D1) edgeMarks.push(`<line x1="${pl.x}" y1="${pl.y}" x2="${pl.x + pl.w}" y2="${pl.y}" stroke="#F5322C" stroke-width="6"/>`);
+      if (pl.edges.D2) edgeMarks.push(`<line x1="${pl.x}" y1="${pl.y + pl.h}" x2="${pl.x + pl.w}" y2="${pl.y + pl.h}" stroke="#F5322C" stroke-width="6"/>`);
+      if (pl.edges.S1) edgeMarks.push(`<line x1="${pl.x}" y1="${pl.y}" x2="${pl.x}" y2="${pl.y + pl.h}" stroke="#F5322C" stroke-width="6"/>`);
+      if (pl.edges.S2) edgeMarks.push(`<line x1="${pl.x + pl.w}" y1="${pl.y}" x2="${pl.x + pl.w}" y2="${pl.y + pl.h}" stroke="#F5322C" stroke-width="6"/>`);
+
+      return `
+        <g>
+          <rect x="${pl.x}" y="${pl.y}" width="${pl.w}" height="${pl.h}" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+          ${edgeMarks.join("")}
+          <text x="${pl.x + pl.w / 2}" y="${pl.y + pl.h / 2 - fs * 0.35}" text-anchor="middle" dominant-baseline="middle" fill="#111827" font-family="ui-monospace,monospace" font-weight="800" font-size="${fs}">${esc(pl.seqLabel)}</text>
+          <text x="${pl.x + pl.w / 2}" y="${pl.y + pl.h / 2 + fs * 0.75}" text-anchor="middle" dominant-baseline="middle" fill="#374151" font-family="ui-monospace,monospace" font-weight="600" font-size="${Math.max(14, fs * 0.65)}">${Math.round(pl.w)}×${Math.round(pl.h)}</text>
+        </g>
+      `;
+    }).join("");
+
+    const cutLineSvgs = state.showCuts ? activeSh.cutLines.map((cl) => {
+      const mx = (cl.x1 + cl.x2) / 2;
+      const my = (cl.y1 + cl.y2) / 2;
+      return `
+        <g>
+          <line x1="${cl.x1}" y1="${cl.y1}" x2="${cl.x2}" y2="${cl.y2}" stroke="#111827" stroke-width="1.6" stroke-dasharray="7 5"/>
+          <circle cx="${mx}" cy="${my}" r="14" fill="#ffffff" stroke="#111827" stroke-width="1.8"/>
+          <text x="${mx}" y="${my + 1}" text-anchor="middle" dominant-baseline="middle" fill="#111827" font-family="ui-monospace,monospace" font-weight="800" font-size="15">${cl.num}</text>
+        </g>
+      `;
+    }).join("") : "";
+
+    const wasteLabelX = Math.min(L - 120, Math.max(usableArea().uL / 2 + Number(state.margins.left || 0), 220));
+    const wasteLabelY = Math.min(W - 80, Math.max(usableArea().uW / 2 + Number(state.margins.top || 0), 140));
+
+    const dimSvg = state.showDims ? `
+      <text x="${L / 2}" y="-22" text-anchor="middle" fill="#111827" font-family="ui-sans-serif,sans-serif" font-weight="700" font-size="24">Kierunek struktury płyty: ${esc(grainText)}</text>
+      <text x="-28" y="${W / 2}" text-anchor="middle" fill="#111827" font-family="ui-monospace,monospace" font-weight="700" font-size="22" transform="rotate(-90 -28 ${W / 2})">${W} mm</text>
+    ` : "";
+
+    const svgHtml = `
+      <div class="lc-stage-inner" style="width:${Math.round(state.zoom * 100)}%">
+        <svg class="lc-sheet-svg" viewBox="${-padL} ${-padT} ${vbW} ${vbH}" xmlns="http://www.w3.org/2000/svg">
+          ${dimSvg}
+          <g>
+            <rect x="0" y="0" width="${L}" height="${W}" fill="#f9fafb" stroke="#111827" stroke-width="3"/>
+            ${hatchLines.join("")}
+            ${marginRects.join("")}
+            <text x="${wasteLabelX}" y="${wasteLabelY}" text-anchor="middle" fill="#111827" font-family="ui-monospace,monospace" font-weight="700" font-size="24">odpad ${Math.round(usableArea().uL)}×${Math.round(usableArea().uW)}</text>
+            ${pieceSvgs}
+            ${cutLineSvgs}
+          </g>
+        </svg>
       </div>
-      <div class="cut-row-3" style="margin-top:0.8rem;font-family:var(--mono);font-size:0.82rem">
-        ${marks.map((m) => `<div class="cut-item">${m}</div>`).join("")}
+    `;
+
+    $("lc2dSvgHolder").innerHTML = svgHtml;
+    $("lcZoomOut").disabled = state.zoom <= 0.6;
+    $("lcZoomIn").disabled = state.zoom >= 2.2;
+    $("lcZoomVal").textContent = `${Math.round(state.zoom * 100)}%`;
+    $("lcToggleCuts").classList.toggle("ghost", !state.showCuts);
+    $("lcToggleDims").classList.toggle("ghost", !state.showDims);
+  }
+
+  function renderCost() {
+    if (!state.layout) computeLayout();
+    const lay = state.layout;
+    const cutCost = lay.totalPartsCount * Number(state.pricing.cutPrice || 0);
+    const edgeCost = lay.totalEdgeMb * Number(state.pricing.edgePrice || 0);
+    const baseArea = state.pricing.calcMode === "sheets_m2" ? lay.totalBoardAreaM2 : lay.totalPartsAreaM2;
+    const matCost = baseArea * Number(state.pricing.materialPrice || 0);
+    const totalCost = cutCost + edgeCost + matCost;
+
+    $("lcCostKpis").innerHTML = `
+      <div class="lc-kpi"><small>Koszt cięcia</small><strong>${fmtNum(cutCost, 2)} zł</strong><span class="lc-note">${lay.totalPartsCount} formatek × ${fmtNum(state.pricing.cutPrice, 2)} zł</span></div>
+      <div class="lc-kpi"><small>Koszt okleinowania</small><strong>${fmtNum(edgeCost, 2)} zł</strong><span class="lc-note">${fmtNum(lay.totalEdgeMb, 2)} mb × ${fmtNum(state.pricing.edgePrice, 2)} zł</span></div>
+      <div class="lc-kpi"><small>Koszt materiału</small><strong>${fmtNum(matCost, 2)} zł</strong><span class="lc-note">${fmtNum(baseArea, 3)} m² × ${fmtNum(state.pricing.materialPrice, 2)} zł</span></div>
+      <div class="lc-kpi"><small>Suma całkowita</small><strong>${fmtNum(totalCost, 2)} zł</strong><span class="lc-note">Płyt: ${lay.sheets.length} szt.</span></div>
+    `;
+  }
+
+  function renderVariants() {
+    if (!state.layout) computeLayout();
+    const baseSheets = state.layout.sheets.length;
+    const baseWaste = state.layout.wastePct;
+
+    const savedKerf = state.board.kerf;
+    const savedGrain = state.board.grain;
+
+    state.board.grain = "along_length";
+    computeLayout();
+    const alongSheets = state.layout.sheets.length;
+    const alongWaste = state.layout.wastePct;
+
+    state.board.grain = "none";
+    computeLayout();
+    const rotSheets = state.layout.sheets.length;
+    const rotWaste = state.layout.wastePct;
+
+    state.board.kerf = savedKerf;
+    state.board.grain = savedGrain;
+    computeLayout();
+
+    $("lcVariantsGrid").innerHTML = `
+      <div class="lc-variant-card ${savedGrain === "along_length" ? "is-current" : ""}">
+        <h3>Wariant A — Słoje wzdłuż długości</h3>
+        <p class="lc-note">Zachowuje kierunek struktury płyty (poziomo). Bezpieczny dla laminatów i usłojeń.</p>
+        <p class="lc-num" style="margin-top:.75rem">Płyty: ${alongSheets} szt. · Odpad: ${fmtNum(alongWaste, 1)}%</p>
+      </div>
+      <div class="lc-variant-card ${savedGrain === "none" ? "is-current" : ""}">
+        <h3>Wariant B — Obrót 90° (bez słojów)</h3>
+        <p class="lc-note">Pozwala obracać formatki o 90° dla mniejszego odpadu przy płytach jednolitych.</p>
+        <p class="lc-num" style="margin-top:.75rem">Płyty: ${rotSheets} szt. · Odpad: ${fmtNum(rotWaste, 1)}%</p>
+      </div>
+      <div class="lc-variant-card">
+        <h3>Wariant C — Bieżąca konfiguracja</h3>
+        <p class="lc-note">Aktywne ustawienia (${esc(state.board.material)}, rzaz ${savedKerf} mm).</p>
+        <p class="lc-num" style="margin-top:.75rem">Płyty: ${baseSheets} szt. · Odpad: ${fmtNum(baseWaste, 1)}%</p>
       </div>
     `;
   }
 
-  onReady(() => {
-    $$("[data-cut-tab]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const mode = btn.dataset.cutTab;
-        $$("[data-cut-tab]").forEach((b) => b.classList.toggle("is-active", b === btn));
-        $("#cutView").hidden = (mode !== "cut");
-        $("#eqView").hidden = (mode !== "equal");
-        if (mode === "equal") renderEqual();
-      });
-    });
+  function renderPrint() {
+    if (!state.layout) computeLayout();
+    const lay = state.layout;
+    $("lcPrintSummary").innerHTML = `
+      <p class="lc-num">Projekt: ${esc(state.projectName)} | Płyta: ${state.board.length} × ${state.board.width} mm (${esc(state.board.material)} — ${esc(state.board.decor)}) | Płyt: ${lay.sheets.length} szt. | Formatek: ${lay.totalPartsCount} szt. | Okleina: ${fmtNum(lay.totalEdgeMb, 2)} mb</p>
+    `;
+  }
 
-    $("#cutPreset").addEventListener("change", (e) => {
-      const v = e.target.value;
-      if (v === "meblowa") {
-        $("#cutSw").value = 2800; $("#cutSh").value = 2070;
-        $("#cutTL").value = 20; $("#cutTR").value = 20; $("#cutTT").value = 20; $("#cutTB").value = 20;
-        $("#cutGrain").value = "h";
-      } else if (v === "osb") {
-        $("#cutSw").value = 2500; $("#cutSh").value = 1250;
-        $("#cutTL").value = 0; $("#cutTR").value = 0; $("#cutTT").value = 0; $("#cutTB").value = 0;
-        $("#cutGrain").value = "none";
+  function renderAll() {
+    updateVerifyBadge();
+    renderProject();
+    renderParts();
+    render2D();
+    renderCost();
+    renderVariants();
+    renderPrint();
+  }
+
+  function saveProjectLocal() {
+    const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    all[state.projectName || "Projekt 1"] = {
+      projectName: state.projectName,
+      board: state.board,
+      margins: state.margins,
+      pricing: state.pricing,
+      parts: state.parts,
+      nextId: state.nextId
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+    $("lcProjectHint").textContent = `Zapisano „${state.projectName}” w pamięci przeglądarki.`;
+  }
+
+  function exportJson() {
+    const payload = {
+      projectName: state.projectName,
+      board: state.board,
+      margins: state.margins,
+      pricing: state.pricing,
+      parts: state.parts
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(state.projectName || "projekt").toLowerCase().replace(/[^a-z0-9-_]+/gi, "-")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importJsonFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result || "{}"));
+        if (data.projectName) state.projectName = String(data.projectName);
+        if (data.board) Object.assign(state.board, data.board);
+        if (data.margins) Object.assign(state.margins, data.margins);
+        if (data.pricing) Object.assign(state.pricing, data.pricing);
+        if (Array.isArray(data.parts)) {
+          state.parts = data.parts.map((p, i) => ({
+            id: Number(p.id) || i + 1,
+            name: String(p.name || `F${i + 1}`),
+            length: Number(p.length) || 200,
+            rotL: Boolean(p.rotL),
+            width: Number(p.width) || 200,
+            rotW: Boolean(p.rotW),
+            qty: Math.max(1, Number(p.qty) || 1),
+            edges: {
+              D1: Boolean(p.edges?.D1),
+              D2: Boolean(p.edges?.D2),
+              S1: Boolean(p.edges?.S1),
+              S2: Boolean(p.edges?.S2)
+            }
+          }));
+          state.nextId = state.parts.reduce((m, x) => Math.max(m, x.id), 0) + 1;
+        }
+        computeLayout();
+        state.verified = true;
+        renderAll();
+      } catch (_) {
+        alert("Niepoprawny plik JSON.");
       }
-      renderCut();
+    };
+    reader.readAsText(file);
+  }
+
+  function importCsvFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const lines = String(reader.result || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      const imported = [];
+      for (const line of lines) {
+        const cols = line.split(/[;,\t]/).map((c) => c.trim());
+        const lVal = Number(cols[1] ?? cols[0]);
+        const wVal = Number(cols[2] ?? cols[1]);
+        const qVal = Math.max(1, Number(cols[3] ?? 1) || 1);
+        if (lVal > 0 && wVal > 0) {
+          imported.push({
+            id: state.nextId++,
+            name: cols[0] && isNaN(Number(cols[0])) ? cols[0] : `P${imported.length + 1}`,
+            length: lVal,
+            rotL: false,
+            width: wVal,
+            rotW: false,
+            qty: qVal,
+            edges: { D1: false, D2: false, S1: false, S2: false }
+          });
+        }
+      }
+      if (imported.length) {
+        state.parts = imported;
+        markDirty();
+        renderAll();
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("[data-lc-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => switchTab(btn.dataset.lcTab));
     });
 
-    $("#cutAddBtn").addEventListener("click", () => {
-      const w = +$("#cutPW").value;
-      const h = +$("#cutPH").value;
-      const qty = Math.max(1, +$("#cutPQty").value || 1);
-      if (!(w > 0 && h > 0)) return;
+    $("lcOptimizeBtn").addEventListener("click", () => {
+      computeLayout();
+      state.verified = true;
+      renderAll();
+      switchTab("2d");
+    });
+
+    const bindNum = (id, fn) => {
+      $(id).addEventListener("input", (e) => {
+        fn(e.target.value);
+        markDirty();
+        renderProject();
+        renderParts();
+      });
+    };
+
+    $("lcProjName").addEventListener("input", (e) => {
+      state.projectName = e.target.value;
+    });
+
+    bindNum("#lcBoardLen", (v) => { state.board.length = Math.max(100, Number(v) || 2800); });
+    bindNum("#lcBoardWid", (v) => { state.board.width = Math.max(100, Number(v) || 2070); });
+    $("lcMaterial").addEventListener("change", (e) => { state.board.material = e.target.value; markDirty(); renderAll(); });
+    $("lcDecor").addEventListener("input", (e) => { state.board.decor = e.target.value; markDirty(); renderParts(); });
+    $("lcGrain").addEventListener("change", (e) => { state.board.grain = e.target.value; markDirty(); renderAll(); });
+    bindNum("#lcKerf", (v) => { state.board.kerf = Math.max(0, Number(v) || 0); });
+
+    bindNum("#lcMarTop", (v) => { state.margins.top = Math.max(0, Number(v) || 0); });
+    bindNum("#lcMarBot", (v) => { state.margins.bottom = Math.max(0, Number(v) || 0); });
+    bindNum("#lcMarLeft", (v) => { state.margins.left = Math.max(0, Number(v) || 0); });
+    bindNum("#lcMarRight", (v) => { state.margins.right = Math.max(0, Number(v) || 0); });
+
+    $("lcCutPrice").addEventListener("input", (e) => { state.pricing.cutPrice = Math.max(0, Number(e.target.value) || 0); renderCost(); });
+    $("lcEdgePrice").addEventListener("input", (e) => { state.pricing.edgePrice = Math.max(0, Number(e.target.value) || 0); renderCost(); });
+    $("lcCalcMode").addEventListener("change", (e) => { state.pricing.calcMode = e.target.value; renderCost(); });
+    $("lcMatPrice").addEventListener("input", (e) => { state.pricing.materialPrice = Math.max(0, Number(e.target.value) || 0); renderCost(); });
+
+    $("lcSaveBtn").addEventListener("click", saveProjectLocal);
+    $("lcExportJsonBtn").addEventListener("click", exportJson);
+    $("lcImportJsonBtn").addEventListener("click", () => $("lcJsonFileInput").click());
+    $("lcJsonFileInput").addEventListener("change", (e) => importJsonFile(e.target.files[0]));
+
+    $("lcAddRowBtn").addEventListener("click", () => {
+      const nextLetter = String.fromCharCode(65 + (state.parts.length % 26));
       state.parts.push({
         id: state.nextId++,
-        w, h, qty,
-        label: $("#cutPLabel").value.trim(),
-        edges: {
-          top: $("#edgeTop").checked,
-          bottom: $("#edgeBot").checked,
-          left: $("#edgeLeft").checked,
-          right: $("#edgeRight").checked
-        }
+        name: nextLetter,
+        length: 400,
+        rotL: false,
+        width: 300,
+        rotW: false,
+        qty: 1,
+        edges: { D1: false, D2: false, S1: false, S2: false }
       });
-      $("#cutPLabel").value = "";
-      renderCut();
+      markDirty();
+      renderParts();
     });
 
-    $("#cutSampleBtn").addEventListener("click", () => {
-      $("#cutPreset").value = "meblowa";
-      $("#cutPreset").dispatchEvent(new Event("change"));
-      state.parts = [
-        { id: state.nextId++, w: 720, h: 450, qty: 4, label: "Front", edges: { top: true, bottom: true, left: true, right: true } },
-        { id: state.nextId++, w: 560, h: 400, qty: 3, label: "Półka", edges: { top: true, bottom: false, left: false, right: false } }
-      ];
-      renderCut();
-    });
+    $("lcImportCsvBtn").addEventListener("click", () => $("lcCsvFileInput").click());
+    $("lcCsvFileInput").addEventListener("change", (e) => importCsvFile(e.target.files[0]));
 
-    $("#cutClearBtn").addEventListener("click", () => {
+    $("lcClearPartsBtn").addEventListener("click", () => {
       state.parts = [];
-      renderCut();
+      markDirty();
+      renderParts();
     });
 
-    $("#cutPrintMode").addEventListener("change", (e) => {
-      $("#cutSheetsOut").hidden = (e.target.value === "table");
+    $("lcPartsBody").addEventListener("input", (e) => {
+      const el = e.target;
+      const id = Number(el.dataset.id);
+      const field = el.dataset.field;
+      if (!id || !field) return;
+      const row = state.parts.find((x) => x.id === id);
+      if (!row) return;
+      if (field === "name") row.name = el.value;
+      else if (field === "length") row.length = Math.max(1, Number(el.value) || 1);
+      else if (field === "width") row.width = Math.max(1, Number(el.value) || 1);
+      else if (field === "qty") row.qty = Math.max(1, Math.floor(Number(el.value) || 1));
+      markDirty();
+      renderParts();
     });
 
-    $("#cutPrintBtn").addEventListener("click", () => window.print());
-
-    ["cutSw", "cutSh", "cutTL", "cutTR", "cutTT", "cutTB", "cutKerf", "cutGrain", "cutPrice"].forEach((id) => {
-      $("#" + id).addEventListener("input", renderCut);
-      $("#" + id).addEventListener("change", renderCut);
+    $("lcPartsBody").addEventListener("change", (e) => {
+      const el = e.target;
+      const id = Number(el.dataset.id);
+      const field = el.dataset.field;
+      if (!id || !field) return;
+      const row = state.parts.find((x) => x.id === id);
+      if (!row) return;
+      if (field === "rotL") row.rotL = el.checked;
+      else if (field === "rotW") row.rotW = el.checked;
+      markDirty();
     });
 
-    ["eqLen", "eqN", "eqKerf", "eqTrim"].forEach((id) => {
-      $("#" + id).addEventListener("input", renderEqual);
-      $("#" + id).addEventListener("change", renderEqual);
+    $("lcPartsBody").addEventListener("click", (e) => {
+      const edgeBtn = e.target.closest("[data-edge]");
+      if (edgeBtn) {
+        const id = Number(edgeBtn.dataset.id);
+        const edge = edgeBtn.dataset.edge;
+        const row = state.parts.find((x) => x.id === id);
+        if (row) {
+          row.edges[edge] = !row.edges[edge];
+          markDirty();
+          renderParts();
+        }
+        return;
+      }
+
+      const dupBtn = e.target.closest("[data-dup]");
+      if (dupBtn) {
+        const id = Number(dupBtn.dataset.dup);
+        const row = state.parts.find((x) => x.id === id);
+        if (row) {
+          state.parts.push({
+            ...row,
+            id: state.nextId++,
+            edges: { ...row.edges }
+          });
+          markDirty();
+          renderParts();
+        }
+        return;
+      }
+
+      const delBtn = e.target.closest("[data-del]");
+      if (delBtn) {
+        const id = Number(delBtn.dataset.del);
+        state.parts = state.parts.filter((x) => x.id !== id);
+        markDirty();
+        renderParts();
+      }
     });
 
-    renderCut();
-    renderEqual();
+    $("lc2dSheetList").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-sheet-idx]");
+      if (!btn) return;
+      state.activeSheet = Number(btn.dataset.sheetIdx) || 0;
+      render2D();
+    });
+
+    $("lcToggleCuts").addEventListener("click", () => {
+      state.showCuts = !state.showCuts;
+      render2D();
+    });
+    $("lcToggleDims").addEventListener("click", () => {
+      state.showDims = !state.showDims;
+      render2D();
+    });
+    $("lcZoomOut").addEventListener("click", () => {
+      state.zoom = Math.max(0.6, +(state.zoom - 0.15).toFixed(2));
+      render2D();
+    });
+    $("lcZoomIn").addEventListener("click", () => {
+      state.zoom = Math.min(2.2, +(state.zoom + 0.15).toFixed(2));
+      render2D();
+    });
+    $("lcZoomFit").addEventListener("click", () => {
+      state.zoom = 1;
+      render2D();
+    });
+
+    $("lcPrintNowBtn").addEventListener("click", () => window.print());
+
+    computeLayout();
+    renderAll();
   });
 })();
