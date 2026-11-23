@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Flappy Bird: Hardcore Edition</title>
+    <title>Flappy Bird: Hardcore Edition | nobodymichael</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&display=swap');
-        
+
         body {
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: #090a0f;
@@ -20,10 +20,6 @@
 
         .glow-red {
             box-shadow: 0 0 30px rgba(245, 50, 44, 0.4);
-        }
-
-        .glow-purple {
-            box-shadow: 0 0 30px rgba(168, 85, 247, 0.4);
         }
 
         .glow-box {
@@ -69,13 +65,19 @@
 </head>
 <body class="h-screen w-screen flex flex-col items-center justify-center p-2 sm:p-4 select-none">
 
-    <!-- Main Container -->
     <div class="relative w-full max-w-[420px] h-full max-h-[740px] flex flex-col bg-[#111218] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-        
+
         <!-- Top Navigation / Stats Bar -->
         <header class="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none">
             <div class="flex items-center gap-2 pointer-events-auto">
-                <button id="muteBtn" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white backdrop-blur-md transition-all active:scale-95" aria-label="Toggle Sound">
+                <a href="./" class="h-10 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center gap-1.5 text-xs font-extrabold text-white backdrop-blur-md transition-all active:scale-95" title="Wróć do Games Hub">
+                    <span>&lt;</span>
+                    <span>Games Hub</span>
+                </a>
+                <a href="../" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-xs font-extrabold text-white/80 hover:text-white backdrop-blur-md transition-all active:scale-95" title="Strona główna">
+                    ⌂
+                </a>
+                <button id="muteBtn" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white backdrop-blur-md transition-all active:scale-95" aria-label="Przełącz dźwięk">
                     <svg id="soundOnIcon" class="w-5 h-5 fill-current" viewBox="0 0 24 24">
                         <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
                     </svg>
@@ -83,49 +85,43 @@
                         <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
                     </svg>
                 </button>
-
-                <!-- Active Difficulty Badge in Game -->
-                <span id="hudDiffBadge" class="px-2.5 py-1 rounded-lg bg-red-500/20 border border-red-500/40 text-red-400 font-extrabold text-[11px] uppercase tracking-wider backdrop-blur-md">
-                    HARD
-                </span>
             </div>
 
-            <!-- Score Display -->
             <div class="flex flex-col items-end">
-                <span id="currentScore" class="text-3xl font-black tracking-wider text-white drop-shadow-md">0</span>
+                <span id="hudDiffBadge" class="px-2.5 py-0.5 mb-1 rounded-lg bg-red-500/20 border border-red-500/40 text-red-400 font-extrabold text-[10px] uppercase tracking-wider backdrop-blur-md">
+                    HARD
+                </span>
+                <span id="currentScore" class="text-2xl font-black leading-none tracking-wider text-white drop-shadow-md">0</span>
                 <span class="text-[10px] uppercase tracking-widest text-white/50 font-bold">Best: <span id="highScoreText">0</span></span>
             </div>
         </header>
 
-        <!-- Dynamic Wind Alert Banner -->
-        <div id="windAlert" class="absolute top-16 left-1/2 -translate-x-1/2 z-20 pointer-events-none opacity-0 transition-opacity duration-300 flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-bold backdrop-blur-md">
+        <div id="windAlert" class="absolute top-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none opacity-0 transition-opacity duration-300 flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-bold backdrop-blur-md">
             <span>🌪️ PODMUCH WIATRU</span>
         </div>
 
-        <!-- Game Canvas Container -->
         <div id="gameWrapper" class="relative flex-1 w-full h-full cursor-pointer overflow-hidden">
             <canvas id="gameCanvas" class="w-full h-full block"></canvas>
 
-            <!-- Overlay: Start Screen -->
+            <!-- Start Screen -->
             <div id="startOverlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-black/50 backdrop-blur-[3px] transition-opacity duration-300">
                 <div class="w-16 h-16 mb-3 rounded-2xl bg-[#F5322C]/20 border border-[#F5322C]/40 flex items-center justify-center glow-red animate-bounce">
                     <svg class="w-8 h-8 text-[#F5322C]" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
                     </svg>
                 </div>
-                
+
                 <h1 class="text-3xl font-black tracking-tight text-white mb-1">FLAPPY BIRD</h1>
                 <span class="text-xs font-bold uppercase tracking-widest text-[#F5322C] mb-5">Hardcore Edition</span>
 
-                <!-- Difficulty Selector -->
                 <div class="w-full max-w-[290px] bg-white/5 border border-white/10 p-1.5 rounded-xl flex gap-1 mb-6">
-                    <button data-diff="normal" class="diff-btn flex-1 py-2 rounded-lg text-xs font-extrabold border border-transparent text-white/60 hover:text-white">
+                    <button type="button" data-diff="normal" class="diff-btn flex-1 py-2 rounded-lg text-xs font-extrabold border border-transparent text-white/60 hover:text-white">
                         NORMAL
                     </button>
-                    <button data-diff="hard" class="diff-btn active-hard flex-1 py-2 rounded-lg text-xs font-extrabold border border-transparent text-white">
+                    <button type="button" data-diff="hard" class="diff-btn active-hard flex-1 py-2 rounded-lg text-xs font-extrabold border border-transparent text-white">
                         HARD
                     </button>
-                    <button data-diff="brutal" class="diff-btn flex-1 py-2 rounded-lg text-xs font-extrabold border border-transparent text-white/60 hover:text-white">
+                    <button type="button" data-diff="brutal" class="diff-btn flex-1 py-2 rounded-lg text-xs font-extrabold border border-transparent text-white/60 hover:text-white">
                         BRUTAL
                     </button>
                 </div>
@@ -140,13 +136,12 @@
                 </div>
             </div>
 
-            <!-- Overlay: Game Over Screen -->
+            <!-- Game Over Screen -->
             <div id="gameOverOverlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-black/80 backdrop-blur-md hidden transition-all duration-300">
                 <div class="w-full max-w-[290px] bg-[#181a24] border border-white/10 rounded-2xl p-6 glow-box flex flex-col items-center">
                     <span class="text-xs font-bold uppercase tracking-widest text-[#F5322C] mb-1">Koniec Gry</span>
                     <h2 class="text-2xl font-black text-white mb-4">WYNIK</h2>
 
-                    <!-- Scores Card -->
                     <div class="w-full bg-white/5 rounded-xl p-4 border border-white/5 flex justify-between items-center mb-6">
                         <div class="text-left">
                             <span class="text-[11px] text-white/50 block font-semibold uppercase">Wynik</span>
@@ -159,115 +154,93 @@
                         </div>
                     </div>
 
-                    <button id="restartBtn" class="w-full py-3.5 px-6 rounded-xl bg-[#F5322C] hover:bg-[#d92721] text-white font-bold text-sm tracking-wide shadow-lg shadow-[#F5322C]/30 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <button id="restartBtn" type="button" class="w-full py-3.5 px-6 rounded-xl bg-[#F5322C] hover:bg-[#d92721] text-white font-bold text-sm tracking-wide shadow-lg shadow-[#F5322C]/30 active:scale-95 transition-all flex items-center justify-center gap-2 mb-2.5">
                         <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
                             <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
                         </svg>
                         RESTART
                     </button>
+
+                    <a href="./" class="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white/85 font-bold text-xs tracking-wide transition-all">
+                        Wróć do Games Hub
+                    </a>
                 </div>
             </div>
-
         </div>
     </div>
 
-    <!-- JavaScript Logic -->
     <script>
-        // --- Web Audio Synthesizer ---
         class AudioSynth {
             constructor() {
                 this.ctx = null;
                 this.muted = false;
             }
-
             init() {
                 if (!this.ctx) {
                     const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    if (AudioContext) {
-                        this.ctx = new AudioContext();
-                    }
+                    if (AudioContext) this.ctx = new AudioContext();
                 }
-                if (this.ctx && this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
             }
-
             playJump() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 const now = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
-
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(360, now);
                 osc.frequency.exponentialRampToValueAtTime(750, now + 0.09);
-
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.09);
-
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
-
                 osc.start(now);
                 osc.stop(now + 0.09);
             }
-
             playScore() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 const now = this.ctx.currentTime;
-                
                 [587.33, 880].forEach((freq, idx) => {
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
-                    const startTime = now + (idx * 0.06);
-
+                    const startTime = now + idx * 0.06;
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(freq, startTime);
-
                     gain.gain.setValueAtTime(0.2, startTime);
                     gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.1);
-
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
-
                     osc.start(startTime);
                     osc.stop(startTime + 0.1);
                 });
             }
-
             playHit() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 const now = this.ctx.currentTime;
-                
-                // Heavy impact sound
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
-
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(280, now);
                 osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
-
                 gain.gain.setValueAtTime(0.5, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
-
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
-
                 osc.start(now);
                 osc.stop(now + 0.3);
             }
         }
 
         const synth = new AudioSynth();
-
-        // --- Game Setup ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const gameWrapper = document.getElementById('gameWrapper');
-        
         const startOverlay = document.getElementById('startOverlay');
         const gameOverOverlay = document.getElementById('gameOverOverlay');
         const restartBtn = document.getElementById('restartBtn');
@@ -283,143 +256,96 @@
         const soundOffIcon = document.getElementById('soundOffIcon');
         const diffBtns = document.querySelectorAll('.diff-btn');
 
-        // Internal logical resolution
         const LOGICAL_WIDTH = 380;
         const LOGICAL_HEIGHT = 640;
         let scale = 1;
 
         function resizeCanvas() {
             const rect = gameWrapper.getBoundingClientRect();
-            canvas.width = rect.width * window.devicePixelRatio;
-            canvas.height = rect.height * window.devicePixelRatio;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.max(1, Math.round(rect.width * dpr));
+            canvas.height = Math.max(1, Math.round(rect.height * dpr));
             scale = canvas.width / LOGICAL_WIDTH;
         }
-
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // States & Difficulty Configs
         const STATE = { START: 0, PLAYING: 1, GAMEOVER: 2 };
         let currentState = STATE.START;
         let selectedDiff = 'hard';
 
         const DIFF_CONFIGS = {
-            normal: {
-                label: 'NORMAL',
-                gap: 138,
-                speed: 155,
-                gravity: 1250,
-                jump: -380,
-                movingProb: 0.15,
-                oscAmp: 30,
-                color: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/40'
-            },
-            hard: {
-                label: 'HARD',
-                gap: 112,
-                speed: 195,
-                gravity: 1500,
-                jump: -415,
-                movingProb: 0.5,
-                oscAmp: 50,
-                color: 'text-amber-400 bg-amber-500/20 border-amber-500/40'
-            },
-            brutal: {
-                label: 'BRUTAL',
-                gap: 92,
-                speed: 235,
-                gravity: 1750,
-                jump: -445,
-                movingProb: 0.85,
-                oscAmp: 75,
-                color: 'text-red-400 bg-red-500/20 border-red-500/40'
-            }
+            normal: { label: 'NORMAL', gap: 138, speed: 155, gravity: 1250, jump: -380, movingProb: 0.15, oscAmp: 30, color: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/40' },
+            hard:   { label: 'HARD',   gap: 112, speed: 195, gravity: 1500, jump: -415, movingProb: 0.50, oscAmp: 50, color: 'text-amber-400 bg-amber-500/20 border-amber-500/40' },
+            brutal: { label: 'BRUTAL', gap: 92,  speed: 235, gravity: 1750, jump: -445, movingProb: 0.85, oscAmp: 75, color: 'text-red-400 bg-red-500/20 border-red-500/40' }
         };
 
-        function getHighScore(diff) {
-            return parseInt(localStorage.getItem(`flappy_best_${diff}`) || '0', 10);
-        }
-
-        function setHighScore(diff, val) {
-            localStorage.setItem(`flappy_best_${diff}`, val.toString());
-        }
+        const getHighScore = d => parseInt(localStorage.getItem(`flappy_best_${d}`) || '0', 10);
+        const setHighScore = (d, v) => localStorage.setItem(`flappy_best_${d}`, String(v));
 
         function updateDiffUI() {
             diffBtns.forEach(btn => {
                 const d = btn.dataset.diff;
                 btn.className = `diff-btn flex-1 py-2 rounded-lg text-xs font-extrabold border border-transparent ${d === selectedDiff ? `active-${d}` : 'text-white/60 hover:text-white'}`;
             });
-
-            const config = DIFF_CONFIGS[selectedDiff];
-            hudDiffBadge.textContent = config.label;
-            hudDiffBadge.className = `px-2.5 py-1 rounded-lg border font-extrabold text-[11px] uppercase tracking-wider backdrop-blur-md ${config.color}`;
+            const cfg = DIFF_CONFIGS[selectedDiff];
+            hudDiffBadge.textContent = cfg.label;
+            hudDiffBadge.className = `px-2.5 py-0.5 mb-1 rounded-lg border font-extrabold text-[10px] uppercase tracking-wider backdrop-blur-md ${cfg.color}`;
             highScoreText.textContent = getHighScore(selectedDiff);
         }
 
         diffBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', e => {
                 e.stopPropagation();
                 selectedDiff = btn.dataset.diff;
                 updateDiffUI();
             });
         });
-
         updateDiffUI();
 
-        // --- Game Logic & Physics ---
-        let score = 0;
-        let lastTime = 0;
-        let gameTime = 0;
-        let screenShakeTime = 0;
+        muteBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            synth.muted = !synth.muted;
+            soundOnIcon.classList.toggle('hidden', synth.muted);
+            soundOffIcon.classList.toggle('hidden', !synth.muted);
+        });
 
-        // Wind System
-        let windForce = 0;
-        let windTimer = 0;
+        let score = 0, lastTime = 0, gameTime = 0, screenShakeTime = 0;
+        let windForce = 0, windTimer = 0;
+        let particles = [], speedLines = [], pipes = [], pipeTimer = 0;
+        let bgOffset = 0, groundOffset = 0;
 
-        // Particles & Speed Lines
-        let particles = [];
-        let speedLines = [];
-
-        // Bird Object
         const bird = {
-            x: 80,
-            y: 300,
-            radius: 13,
-            velocity: 0,
-            rotation: 0,
-            wingPhase: 0,
-
+            x: 80, y: 300, radius: 13, velocity: 0, rotation: 0, wingPhase: 0,
             reset() {
-                const config = DIFF_CONFIGS[selectedDiff];
                 this.x = 80;
                 this.y = LOGICAL_HEIGHT / 2 - 20;
                 this.velocity = 0;
                 this.rotation = 0;
                 this.wingPhase = 0;
             },
-
             jump() {
-                const config = DIFF_CONFIGS[selectedDiff];
-                this.velocity = config.jump;
+                this.velocity = DIFF_CONFIGS[selectedDiff].jump;
                 synth.playJump();
-                createJumpParticles(this.x, this.y);
+                for (let i = 0; i < 7; i++) {
+                    particles.push({
+                        x: this.x - 10, y: this.y + 5,
+                        vx: (Math.random() - 0.5) * 50 - 40,
+                        vy: (Math.random() - 0.5) * 40 + 20,
+                        radius: Math.random() * 3.5 + 1.5,
+                        alpha: 1,
+                        color: selectedDiff === 'brutal' ? '#ef4444' : '#F5322C'
+                    });
+                }
             },
-
             update(dt) {
-                const config = DIFF_CONFIGS[selectedDiff];
-
+                const cfg = DIFF_CONFIGS[selectedDiff];
                 if (currentState === STATE.PLAYING) {
-                    // Apply gravity & wind force
-                    this.velocity += (config.gravity + windForce) * dt;
+                    this.velocity += (cfg.gravity + windForce) * dt;
                     this.y += this.velocity * dt;
-
-                    // Smooth rotation based on velocity
-                    if (this.velocity < 0) {
-                        this.rotation = Math.max(-0.45, this.rotation - 5 * dt);
-                    } else {
-                        this.rotation = Math.min(1.25, this.rotation + 4 * dt);
-                    }
-
+                    this.rotation = this.velocity < 0
+                        ? Math.max(-0.45, this.rotation - 5 * dt)
+                        : Math.min(1.25, this.rotation + 4 * dt);
                     this.wingPhase += dt * 18;
                 } else if (currentState === STATE.START) {
                     this.wingPhase += dt * 9;
@@ -427,33 +353,28 @@
                     this.rotation = 0;
                 } else if (currentState === STATE.GAMEOVER) {
                     if (this.y + this.radius < LOGICAL_HEIGHT - 60) {
-                        this.velocity += config.gravity * dt;
+                        this.velocity += cfg.gravity * dt;
                         this.y += this.velocity * dt;
                         this.rotation = Math.min(1.5, this.rotation + 6 * dt);
                     }
                 }
             },
-
             draw() {
                 ctx.save();
                 ctx.translate(this.x * scale, this.y * scale);
                 ctx.rotate(this.rotation);
-
                 const r = this.radius * scale;
 
-                // Bird Shadow
                 ctx.beginPath();
                 ctx.arc(0, r * 0.3, r, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
                 ctx.fill();
 
-                // Bird Body
                 ctx.beginPath();
                 ctx.arc(0, 0, r, 0, Math.PI * 2);
                 ctx.fillStyle = selectedDiff === 'brutal' ? '#ef4444' : (selectedDiff === 'hard' ? '#f59e0b' : '#F5322C');
                 ctx.fill();
 
-                // Beak
                 ctx.beginPath();
                 ctx.moveTo(r * 0.4, -r * 0.2);
                 ctx.lineTo(r * 1.35, 0);
@@ -461,7 +382,6 @@
                 ctx.fillStyle = '#FFAA00';
                 ctx.fill();
 
-                // Eye
                 ctx.beginPath();
                 ctx.arc(r * 0.3, -r * 0.3, r * 0.35, 0, Math.PI * 2);
                 ctx.fillStyle = '#FFFFFF';
@@ -472,458 +392,258 @@
                 ctx.fillStyle = '#111111';
                 ctx.fill();
 
-                // Wing
                 const wingOffsetY = Math.sin(this.wingPhase) * (r * 0.35);
                 ctx.beginPath();
                 ctx.ellipse(-r * 0.3, wingOffsetY, r * 0.5, r * 0.3, -0.25, 0, Math.PI * 2);
-                ctx.fillStyle = selectedDiff === 'brutal' ? '#b91c1c' : '#B91C1C';
+                ctx.fillStyle = '#B91C1C';
                 ctx.fill();
-
                 ctx.restore();
             }
         };
 
-        // Pipe System
-        let pipes = [];
-        let pipeTimer = 0;
-
-        function getCurrentSpeed() {
-            const config = DIFF_CONFIGS[selectedDiff];
-            // Ramp up speed slightly with score
-            const speedRamp = Math.min(60, score * 2.5);
-            return config.speed + speedRamp;
-        }
-
-        function getCurrentGap() {
-            const config = DIFF_CONFIGS[selectedDiff];
-            // Narrow gap slightly as score increases
-            const gapShrink = Math.min(18, Math.floor(score / 3));
-            return Math.max(78, config.gap - gapShrink);
-        }
+        const getCurrentSpeed = () => DIFF_CONFIGS[selectedDiff].speed + Math.min(60, score * 2.5);
+        const getCurrentGap = () => Math.max(78, DIFF_CONFIGS[selectedDiff].gap - Math.min(18, Math.floor(score / 3)));
 
         function spawnPipe() {
-            const config = DIFF_CONFIGS[selectedDiff];
+            const cfg = DIFF_CONFIGS[selectedDiff];
             const gap = getCurrentGap();
-            const minHeight = 50;
-            const maxHeight = LOGICAL_HEIGHT - 60 - gap - 50;
-            const topHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
-
-            // Decide if this pipe moves up/down
-            const isMoving = Math.random() < config.movingProb;
-            const oscAmp = isMoving ? Math.min(config.oscAmp, (LOGICAL_HEIGHT - 120 - gap) / 3) : 0;
-            const oscSpeed = isMoving ? (1.5 + Math.random() * 1.5) : 0;
-
+            const minH = 50;
+            const maxH = LOGICAL_HEIGHT - 60 - gap - 50;
+            const topH = Math.floor(Math.random() * (maxH - minH + 1)) + minH;
+            const isMoving = Math.random() < cfg.movingProb;
             pipes.push({
                 x: LOGICAL_WIDTH,
-                baseTopHeight: topHeight,
-                topHeight: topHeight,
-                gap: gap,
-                bottomY: topHeight + gap,
+                baseTopHeight: topH,
+                topHeight: topH,
+                gap,
+                bottomY: topH + gap,
                 passed: false,
-                isMoving: isMoving,
-                oscAmp: oscAmp,
-                oscSpeed: oscSpeed,
+                isMoving,
+                oscAmp: isMoving ? Math.min(cfg.oscAmp, (LOGICAL_HEIGHT - 120 - gap) / 3) : 0,
+                oscSpeed: isMoving ? (1.5 + Math.random() * 1.5) : 0,
                 oscPhase: Math.random() * Math.PI * 2
             });
         }
 
-        // Background Parallax
-        let bgOffset = 0;
-        let groundOffset = 0;
+        function checkCollision() {
+            if (bird.y + bird.radius >= LOGICAL_HEIGHT - 60 || bird.y - bird.radius <= 0) return true;
+            const pw = 58;
+            for (const p of pipes) {
+                if (bird.x + bird.radius > p.x && bird.x - bird.radius < p.x + pw) {
+                    if (bird.y - bird.radius < p.topHeight || bird.y + bird.radius > p.bottomY) return true;
+                }
+            }
+            return false;
+        }
 
-        function updateBackground(dt) {
-            const currentSpeed = getCurrentSpeed();
+        function startGame() {
+            score = 0;
+            currentScoreEl.textContent = '0';
+            pipes = [];
+            particles = [];
+            speedLines = [];
+            pipeTimer = 0.8;
+            windForce = 0;
+            windTimer = 3;
+            windAlert.style.opacity = '0';
+            bird.reset();
+            currentState = STATE.PLAYING;
+            startOverlay.classList.add('hidden');
+            gameOverOverlay.classList.add('hidden');
+            bird.jump();
+        }
+
+        function triggerGameOver() {
+            if (currentState === STATE.GAMEOVER) return;
+            currentState = STATE.GAMEOVER;
+            windForce = 0;
+            windAlert.style.opacity = '0';
+            screenShakeTime = 0.25;
+            synth.playHit();
+
+            const best = Math.max(score, getHighScore(selectedDiff));
+            setHighScore(selectedDiff, best);
+            highScoreText.textContent = best;
+            finalScoreEl.textContent = score;
+            bestScoreEl.textContent = best;
+            gameOverDiffTag.textContent = DIFF_CONFIGS[selectedDiff].label;
+            gameOverOverlay.classList.remove('hidden');
+        }
+
+        function handleInput() {
+            if (currentState === STATE.START) startGame();
+            else if (currentState === STATE.PLAYING) bird.jump();
+        }
+
+        gameWrapper.addEventListener('pointerdown', e => {
+            if (e.target.closest('button, a')) return;
+            handleInput();
+        });
+        restartBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            startGame();
+        });
+        window.addEventListener('keydown', e => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                if (currentState === STATE.GAMEOVER) startGame();
+                else handleInput();
+            }
+        });
+
+        function update(dt) {
+            gameTime += dt;
+            const spd = getCurrentSpeed();
             bgOffset = (bgOffset + dt * 25) % LOGICAL_WIDTH;
-            groundOffset = (groundOffset + dt * currentSpeed) % LOGICAL_WIDTH;
-        }
-
-        function drawBackground() {
-            const w = canvas.width;
-            const h = canvas.height;
-
-            // Sky Gradient
-            const skyGradient = ctx.createLinearGradient(0, 0, 0, h);
-            skyGradient.addColorStop(0, '#0a0b12');
-            skyGradient.addColorStop(0.7, '#131625');
-            skyGradient.addColorStop(1, '#1b1f33');
-            ctx.fillStyle = skyGradient;
-            ctx.fillRect(0, 0, w, h);
-
-            // Distant City Silhouette
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.025)';
-            const cityWidth = 40 * scale;
-            for (let i = -1; i < LOGICAL_WIDTH / 40 + 2; i++) {
-                const x = (i * 40 - (bgOffset * 0.4)) * scale;
-                const buildingHeight = (70 + (Math.sin(i * 1.8) * 35 + 35)) * scale;
-                ctx.fillRect(x, h - (60 * scale) - buildingHeight, cityWidth - (2 * scale), buildingHeight);
+            if (currentState !== STATE.GAMEOVER) {
+                groundOffset = (groundOffset + dt * spd) % LOGICAL_WIDTH;
             }
-        }
+            if (screenShakeTime > 0) screenShakeTime = Math.max(0, screenShakeTime - dt);
 
-        function drawPipes() {
-            pipes.forEach(pipe => {
-                const x = pipe.x * scale;
-                const pw = 58 * scale;
-                const topH = pipe.topHeight * scale;
-                const botY = pipe.bottomY * scale;
-                const botH = (LOGICAL_HEIGHT - 60 - pipe.bottomY) * scale;
-
-                // Pipe Colors (Highlight moving pipes)
-                let mainColorStart = '#242938';
-                let mainColorMid = '#384056';
-                let mainColorEnd = '#1b1f2b';
-                let rimGlow = 'rgba(255, 255, 255, 0.1)';
-
-                if (pipe.isMoving) {
-                    mainColorStart = '#2c223b';
-                    mainColorMid = '#4d3766';
-                    mainColorEnd = '#20182b';
-                    rimGlow = 'rgba(168, 85, 247, 0.5)';
+            if (currentState === STATE.PLAYING) {
+                if (selectedDiff !== 'normal') {
+                    windTimer -= dt;
+                    if (windTimer <= 0) {
+                        if (windForce === 0) {
+                            windForce = (Math.random() < 0.5 ? -1 : 1) * (selectedDiff === 'brutal' ? 380 : 220);
+                            windTimer = 2.2;
+                            windAlert.style.opacity = '1';
+                        } else {
+                            windForce = 0;
+                            windTimer = 4 + Math.random() * 3;
+                            windAlert.style.opacity = '0';
+                        }
+                    }
                 }
 
-                const pipeGrad = ctx.createLinearGradient(x, 0, x + pw, 0);
-                pipeGrad.addColorStop(0, mainColorStart);
-                pipeGrad.addColorStop(0.3, mainColorMid);
-                pipeGrad.addColorStop(0.7, mainColorStart);
-                pipeGrad.addColorStop(1, mainColorEnd);
-
-                ctx.fillStyle = pipeGrad;
-                ctx.strokeStyle = rimGlow;
-                ctx.lineWidth = Math.max(1, 1.5 * scale);
-
-                // Top Pipe Body
-                ctx.fillRect(x, 0, pw, topH);
-                ctx.strokeRect(x, 0, pw, topH);
-
-                // Top Pipe Rim
-                const rimH = 20 * scale;
-                const rimOverlap = 4 * scale;
-                ctx.fillRect(x - rimOverlap, topH - rimH, pw + rimOverlap * 2, rimH);
-                ctx.strokeRect(x - rimOverlap, topH - rimH, pw + rimOverlap * 2, rimH);
-
-                // Bottom Pipe Body
-                ctx.fillRect(x, botY, pw, botH);
-                ctx.strokeRect(x, botY, pw, botH);
-
-                // Bottom Pipe Rim
-                ctx.fillRect(x - rimOverlap, botY, pw + rimOverlap * 2, rimH);
-                ctx.strokeRect(x - rimOverlap, botY, pw + rimOverlap * 2, rimH);
-
-                // Moving Pipe Indicator Glow Lines
-                if (pipe.isMoving) {
-                    ctx.fillStyle = '#a855f7';
-                    ctx.fillRect(x - rimOverlap, topH - (3 * scale), pw + rimOverlap * 2, 3 * scale);
-                    ctx.fillRect(x - rimOverlap, botY, pw + rimOverlap * 2, 3 * scale);
+                pipeTimer -= dt;
+                if (pipeTimer <= 0) {
+                    spawnPipe();
+                    pipeTimer = Math.max(1.05, 220 / spd);
                 }
-            });
-        }
 
-        function drawGround() {
-            const w = canvas.width;
-            const h = canvas.height;
-            const groundH = 60 * scale;
-            const groundY = h - groundH;
+                for (let i = pipes.length - 1; i >= 0; i--) {
+                    const p = pipes[i];
+                    p.x -= spd * dt;
+                    if (p.isMoving) {
+                        const offset = Math.sin(gameTime * p.oscSpeed + p.oscPhase) * p.oscAmp;
+                        p.topHeight = Math.max(40, Math.min(LOGICAL_HEIGHT - 60 - p.gap - 40, p.baseTopHeight + offset));
+                        p.bottomY = p.topHeight + p.gap;
+                    }
+                    if (!p.passed && p.x + 58 < bird.x) {
+                        p.passed = true;
+                        score++;
+                        currentScoreEl.textContent = score;
+                        synth.playScore();
+                    }
+                    if (p.x < -70) pipes.splice(i, 1);
+                }
 
-            // Ground Base
-            ctx.fillStyle = '#11131c';
-            ctx.fillRect(0, groundY, w, groundH);
-
-            // Ground Top Border Line
-            ctx.fillStyle = selectedDiff === 'brutal' ? '#ef4444' : (selectedDiff === 'hard' ? '#f59e0b' : '#F5322C');
-            ctx.fillRect(0, groundY, w, 3 * scale);
-
-            // Striped Pattern
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-            const stripeWidth = 20 * scale;
-            for (let x = -stripeWidth * 2; x < w + stripeWidth * 2; x += stripeWidth * 2) {
-                const drawX = x - (groundOffset * scale) % (stripeWidth * 2);
-                ctx.beginPath();
-                ctx.moveTo(drawX, groundY + (3 * scale));
-                ctx.lineTo(drawX + stripeWidth, groundY + (3 * scale));
-                ctx.lineTo(drawX, groundY + groundH);
-                ctx.lineTo(drawX - stripeWidth, groundY + groundH);
-                ctx.closePath();
-                ctx.fill();
+                if (checkCollision()) triggerGameOver();
             }
-        }
 
-        // Particle System & Speed Lines
-        function createJumpParticles(px, py) {
-            for (let i = 0; i < 7; i++) {
-                particles.push({
-                    x: px - 10,
-                    y: py + 5,
-                    vx: (Math.random() - 0.5) * 50 - 40,
-                    vy: (Math.random() - 0.5) * 40 + 20,
-                    radius: Math.random() * 3.5 + 1.5,
-                    alpha: 1,
-                    color: selectedDiff === 'brutal' ? '#ef4444' : '#F5322C'
+            bird.update(dt);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const pt = particles[i];
+                pt.x += pt.vx * dt;
+                pt.y += pt.vy * dt;
+                pt.alpha -= dt * 2.8;
+                if (pt.alpha <= 0) particles.splice(i, 1);
+            }
+            if (currentState === STATE.PLAYING && (selectedDiff === 'brutal' || score >= 10) && Math.random() < 0.4) {
+                speedLines.push({
+                    x: LOGICAL_WIDTH + 20,
+                    y: Math.random() * (LOGICAL_HEIGHT - 80),
+                    length: Math.random() * 40 + 20,
+                    speed: spd * 1.6,
+                    alpha: Math.random() * 0.3 + 0.1
                 });
             }
-        }
-
-        function updateParticles(dt) {
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                p.x += p.vx * dt;
-                p.y += p.vy * dt;
-                p.alpha -= dt * 2.8;
-
-                if (p.alpha <= 0) {
-                    particles.splice(i, 1);
-                }
-            }
-
-            // Speed lines in high speeds
-            if (currentState === STATE.PLAYING && (selectedDiff === 'brutal' || score >= 10)) {
-                if (Math.random() < 0.4) {
-                    speedLines.push({
-                        x: LOGICAL_WIDTH + 20,
-                        y: Math.random() * (LOGICAL_HEIGHT - 80),
-                        length: Math.random() * 40 + 20,
-                        speed: getCurrentSpeed() * 1.6,
-                        alpha: Math.random() * 0.3 + 0.1
-                    });
-                }
-            }
-
             for (let i = speedLines.length - 1; i >= 0; i--) {
                 const sl = speedLines[i];
                 sl.x -= sl.speed * dt;
-                if (sl.x < -sl.length) {
-                    speedLines.splice(i, 1);
-                }
+                if (sl.x < -sl.length) speedLines.splice(i, 1);
             }
         }
 
-        function drawParticles() {
-            // Speed Lines
+        function draw() {
+            const w = canvas.width, h = canvas.height;
+            ctx.save();
+            if (screenShakeTime > 0) {
+                const mag = 6 * scale * (screenShakeTime / 0.25);
+                ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
+            }
+
+            const sky = ctx.createLinearGradient(0, 0, 0, h);
+            sky.addColorStop(0, '#0a0b12');
+            sky.addColorStop(0.7, '#131625');
+            sky.addColorStop(1, '#1b1f33');
+            ctx.fillStyle = sky;
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.025)';
+            for (let i = -1; i < LOGICAL_WIDTH / 40 + 2; i++) {
+                const x = (i * 40 - bgOffset * 0.4) * scale;
+                const bh = (70 + Math.sin(i * 1.8) * 35 + 35) * scale;
+                ctx.fillRect(x, h - 60 * scale - bh, 38 * scale, bh);
+            }
+
+            pipes.forEach(p => {
+                const x = p.x * scale, pw = 58 * scale, topH = p.topHeight * scale, botY = p.bottomY * scale;
+                const botH = (LOGICAL_HEIGHT - 60 - p.bottomY) * scale;
+                const grad = ctx.createLinearGradient(x, 0, x + pw, 0);
+                if (p.isMoving) {
+                    grad.addColorStop(0, '#2c223b'); grad.addColorStop(0.3, '#4d3766'); grad.addColorStop(1, '#20182b');
+                } else {
+                    grad.addColorStop(0, '#242938'); grad.addColorStop(0.3, '#384056'); grad.addColorStop(1, '#1b1f2b');
+                }
+                ctx.fillStyle = grad;
+                ctx.fillRect(x, 0, pw, topH);
+                ctx.fillRect(x - 4 * scale, topH - 20 * scale, pw + 8 * scale, 20 * scale);
+                ctx.fillRect(x, botY, pw, botH);
+                ctx.fillRect(x - 4 * scale, botY, pw + 8 * scale, 20 * scale);
+            });
+
+            const groundH = 60 * scale, groundY = h - groundH;
+            ctx.fillStyle = '#11131c';
+            ctx.fillRect(0, groundY, w, groundH);
+            ctx.fillStyle = selectedDiff === 'brutal' ? '#ef4444' : (selectedDiff === 'hard' ? '#f59e0b' : '#F5322C');
+            ctx.fillRect(0, groundY, w, 3 * scale);
+
             speedLines.forEach(sl => {
-                ctx.save();
                 ctx.strokeStyle = `rgba(255, 255, 255, ${sl.alpha})`;
                 ctx.lineWidth = 1.5 * scale;
                 ctx.beginPath();
                 ctx.moveTo(sl.x * scale, sl.y * scale);
                 ctx.lineTo((sl.x + sl.length) * scale, sl.y * scale);
                 ctx.stroke();
-                ctx.restore();
             });
 
-            // Particles
-            particles.forEach(p => {
+            particles.forEach(pt => {
                 ctx.save();
-                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.globalAlpha = Math.max(0, pt.alpha);
                 ctx.beginPath();
-                ctx.arc(p.x * scale, p.y * scale, p.radius * scale, 0, Math.PI * 2);
-                ctx.fillStyle = p.color;
+                ctx.arc(pt.x * scale, pt.y * scale, pt.radius * scale, 0, Math.PI * 2);
+                ctx.fillStyle = pt.color;
                 ctx.fill();
                 ctx.restore();
             });
-        }
 
-        // Collision Detection
-        function checkCollision() {
-            if (bird.y + bird.radius >= LOGICAL_HEIGHT - 60 || bird.y - bird.radius <= 0) {
-                return true;
-            }
-
-            for (let i = 0; i < pipes.length; i++) {
-                const pipe = pipes[i];
-                const pw = 58;
-
-                if (bird.x + bird.radius > pipe.x && bird.x - bird.radius < pipe.x + pw) {
-                    if (bird.y - bird.radius < pipe.topHeight || bird.y + bird.radius > pipe.bottomY) {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        // --- Game Flow Logic ---
-        function triggerGameOver() {
-            currentState = STATE.GAMEOVER;
-            screenShakeTime = 0.35;
-            synth.playHit();
-
-            const currentBest = getHighScore(selectedDiff);
-            if (score > currentBest) {
-                setHighScore(selectedDiff, score);
-                highScoreText.textContent = score;
-            }
-
-            finalScoreEl.textContent = score;
-            bestScoreEl.textContent = getHighScore(selectedDiff);
-            gameOverDiffTag.textContent = DIFF_CONFIGS[selectedDiff].label;
-
-            windAlert.classList.add('opacity-0');
-
-            setTimeout(() => {
-                gameOverOverlay.classList.remove('hidden');
-            }, 450);
-        }
-
-        function resetGame() {
-            bird.reset();
-            pipes = [];
-            particles = [];
-            speedLines = [];
-            score = 0;
-            pipeTimer = 0;
-            gameTime = 0;
-            windForce = 0;
-            windTimer = 0;
-            currentScoreEl.textContent = '0';
-            updateDiffUI();
-
-            gameOverOverlay.classList.add('hidden');
-            startOverlay.classList.remove('hidden');
-            currentState = STATE.START;
-        }
-
-        function startGame() {
-            currentState = STATE.PLAYING;
-            startOverlay.classList.add('opacity-0');
-            setTimeout(() => {
-                startOverlay.classList.add('hidden');
-                startOverlay.classList.remove('opacity-0');
-            }, 250);
-            bird.jump();
-        }
-
-        function handleInput(e) {
-            if (e && e.type === 'keydown' && e.code !== 'Space' && e.code !== 'ArrowUp') {
-                return;
-            }
-            if (e && e.cancelable) e.preventDefault();
-
-            if (currentState === STATE.START) {
-                startGame();
-            } else if (currentState === STATE.PLAYING) {
-                bird.jump();
-            }
-        }
-
-        // Event Listeners
-        gameWrapper.addEventListener('pointerdown', (e) => {
-            if (currentState !== STATE.GAMEOVER) {
-                handleInput(e);
-            }
-        });
-
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' || e.code === 'ArrowUp') {
-                handleInput(e);
-            }
-        });
-
-        restartBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            resetGame();
-        });
-
-        muteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            synth.muted = !synth.muted;
-            soundOnIcon.classList.toggle('hidden', synth.muted);
-            soundOffIcon.classList.toggle('hidden', !synth.muted);
-        });
-
-        // Main Game Loop
-        function gameLoop(timestamp) {
-            if (!lastTime) lastTime = timestamp;
-            const dt = Math.min((timestamp - lastTime) / 1000, 0.08);
-            lastTime = timestamp;
-
-            ctx.save();
-
-            // Screen Shake Effect
-            if (screenShakeTime > 0) {
-                screenShakeTime -= dt;
-                const shakeIntensity = 12 * scale;
-                const dx = (Math.random() - 0.5) * shakeIntensity;
-                const dy = (Math.random() - 0.5) * shakeIntensity;
-                ctx.translate(dx, dy);
-            }
-
-            // Updates
-            if (currentState === STATE.PLAYING) {
-                gameTime += dt;
-                updateBackground(dt);
-                pipeTimer += dt;
-
-                // Spawn pipes (Interval shortens slightly with speed)
-                const spawnInterval = Math.max(1.1, 1.65 - (getCurrentSpeed() - 150) * 0.003);
-                if (pipeTimer >= spawnInterval) {
-                    spawnPipe();
-                    pipeTimer = 0;
-                }
-
-                // Wind mechanics in Hard & Brutal
-                if (selectedDiff !== 'normal') {
-                    windTimer += dt;
-                    if (windTimer > 6) {
-                        // Activate wind gust
-                        windForce = (Math.random() - 0.5) * (selectedDiff === 'brutal' ? 500 : 320);
-                        windAlert.classList.remove('opacity-0');
-                        setTimeout(() => {
-                            windForce = 0;
-                            windAlert.classList.add('opacity-0');
-                        }, 2200);
-                        windTimer = 0;
-                    }
-                }
-
-                // Update pipes
-                const currentSpeed = getCurrentSpeed();
-                for (let i = pipes.length - 1; i >= 0; i--) {
-                    const pipe = pipes[i];
-                    pipe.x -= currentSpeed * dt;
-
-                    // Oscillate moving pipes
-                    if (pipe.isMoving) {
-                        pipe.oscPhase += dt * pipe.oscSpeed;
-                        pipe.topHeight = pipe.baseTopHeight + Math.sin(pipe.oscPhase) * pipe.oscAmp;
-                        pipe.bottomY = pipe.topHeight + pipe.gap;
-                    }
-
-                    // Score Increment
-                    if (!pipe.passed && pipe.x + 58 < bird.x) {
-                        pipe.passed = true;
-                        score++;
-                        currentScoreEl.textContent = score;
-                        synth.playScore();
-                    }
-
-                    if (pipe.x + 58 < -30) {
-                        pipes.splice(i, 1);
-                    }
-                }
-
-                if (checkCollision()) {
-                    triggerGameOver();
-                }
-            } else if (currentState === STATE.START) {
-                updateBackground(dt);
-            }
-
-            bird.update(dt);
-            updateParticles(dt);
-
-            // Rendering
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
-            drawPipes();
-            drawGround();
-            drawParticles();
             bird.draw();
-
             ctx.restore();
-
-            requestAnimationFrame(gameLoop);
         }
 
-        requestAnimationFrame(gameLoop);
+        function loop(ts) {
+            if (!lastTime) lastTime = ts;
+            const dt = Math.min(0.05, (ts - lastTime) / 1000);
+            lastTime = ts;
+            update(dt);
+            draw();
+            requestAnimationFrame(loop);
+        }
+        bird.reset();
+        requestAnimationFrame(loop);
     </script>
 </body>
 </html>
