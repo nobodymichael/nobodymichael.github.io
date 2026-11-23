@@ -20,43 +20,43 @@
 </header>
 
 <div class="wrap">
-  <div class="lc-shell">
-    <aside class="lc-side" aria-label="Nawigacja narzędzia">
-      <div class="lc-nav-title">Sekcje</div>
-      <button type="button" class="lc-nav-btn is-active" data-lc-tab="projekt">Projekt</button>
-      <button type="button" class="lc-nav-btn" data-lc-tab="formatki">Formatki</button>
-      <button type="button" class="lc-nav-btn" data-lc-tab="2d">Rozkrój 2D</button>
-      <button type="button" class="lc-nav-btn" data-lc-tab="kosztorys">Kosztorys</button>
-      <button type="button" class="lc-nav-btn" data-lc-tab="warianty">Warianty</button>
-      <button type="button" class="lc-nav-btn" data-lc-tab="druk">Druk / PDF</button>
-    </aside>
-
-    <main class="lc-main">
-      <div class="lc-top-bar">
-        <h1>LEBERCUT</h1>
-        <div class="lc-top-actions">
-          <span id="lcVerifyBadge" class="btn small ghost">Wynik aktualny i zweryfikowany</span>
-          <button type="button" id="lcOptimizeBtn" class="btn small">Optymalizuj rozkrój</button>
-        </div>
+  <div class="lc-app">
+    <div class="lc-topbar">
+      <div class="lc-topbar-left">
+        <span class="lc-title">LEBERCUT</span>
+        <nav class="lc-tabs" aria-label="Zakładki">
+          <button type="button" class="lc-tab is-active" data-lc-tab="projekt">Projekt</button>
+          <button type="button" class="lc-tab" data-lc-tab="formatki">Formatki</button>
+          <button type="button" class="lc-tab" data-lc-tab="2d">Rozkrój 2D</button>
+          <button type="button" class="lc-tab" data-lc-tab="kosztorys">Kosztorys</button>
+          <button type="button" class="lc-tab" data-lc-tab="warianty">Warianty</button>
+          <button type="button" class="lc-tab" data-lc-tab="druk">Druk / PDF</button>
+        </nav>
       </div>
+      <div class="lc-topbar-right">
+        <span id="lcVerifyBadge" class="lc-status-badge">Wynik aktualny i zweryfikowany</span>
+        <button type="button" id="lcOptimizeBtn" class="btn small">Optymalizuj rozkrój</button>
+      </div>
+    </div>
 
-      <!-- ZAKŁADKA: PROJEKT -->
-      <section data-lc-view="projekt">
+    <!-- PROJEKT -->
+    <section data-lc-view="projekt">
+      <div class="lc-projekt-grid">
         <div class="lc-grid-3">
-          <div class="lc-card">
+          <div class="lc-box">
             <h2>Płyta i materiał</h2>
-            <div class="lc-grid-2 lc-form-group">
-              <div>
+            <div class="lc-row-2">
+              <div class="lc-field">
                 <label class="lc-lbl" for="lcBoardLen">Długość płyty (mm)</label>
                 <input type="number" id="lcBoardLen" class="lc-input" value="2800" min="100" step="1">
               </div>
-              <div>
+              <div class="lc-field">
                 <label class="lc-lbl" for="lcBoardWid">Szerokość płyty (mm)</label>
                 <input type="number" id="lcBoardWid" class="lc-input" value="2070" min="100" step="1">
               </div>
             </div>
-            <div class="lc-grid-2 lc-form-group">
-              <div>
+            <div class="lc-row-2">
+              <div class="lc-field">
                 <label class="lc-lbl" for="lcMaterial">Rodzaj materiału</label>
                 <select id="lcMaterial" class="lc-select">
                   <option value="Płyta wiórowa (meblowa)">Płyta wiórowa (meblowa)</option>
@@ -65,13 +65,13 @@
                   <option value="Płyta OSB">Płyta OSB</option>
                 </select>
               </div>
-              <div>
+              <div class="lc-field">
                 <label class="lc-lbl" for="lcDecor">Kolor / dekor (płyta meblowa)</label>
                 <input type="text" id="lcDecor" class="lc-input" value="Dąb sonoma">
               </div>
             </div>
-            <div class="lc-grid-2 lc-form-group">
-              <div>
+            <div class="lc-row-2">
+              <div class="lc-field">
                 <label class="lc-lbl" for="lcGrain">Kierunek struktury płyty</label>
                 <select id="lcGrain" class="lc-select">
                   <option value="along_length">Wzdłuż długości płyty</option>
@@ -79,7 +79,7 @@
                   <option value="none">Bez struktury (obrót 90°)</option>
                 </select>
               </div>
-              <div>
+              <div class="lc-field">
                 <label class="lc-lbl" for="lcKerf">Rzaz piły (mm)</label>
                 <input type="number" id="lcKerf" class="lc-input" value="4" min="0" max="20" step="0.1">
               </div>
@@ -87,24 +87,24 @@
             <p class="lc-note">Okleinowanie: kalkulator aktywny dla płyty meblowej. Zmiana wymiarów płyty, materiału lub struktury wymaga ponownej optymalizacji rozkroju.</p>
           </div>
 
-          <div class="lc-card">
+          <div class="lc-box">
             <h2>Marginesy technologiczne</h2>
-            <div class="lc-grid-2 lc-form-group">
-              <div>
+            <div class="lc-row-2">
+              <div class="lc-field">
                 <label class="lc-lbl" for="lcMarTop">Górny (mm)</label>
                 <input type="number" id="lcMarTop" class="lc-input" value="20" min="0" step="1">
               </div>
-              <div>
+              <div class="lc-field">
                 <label class="lc-lbl" for="lcMarBot">Dolny (mm)</label>
                 <input type="number" id="lcMarBot" class="lc-input" value="20" min="0" step="1">
               </div>
             </div>
-            <div class="lc-grid-2 lc-form-group">
-              <div>
+            <div class="lc-row-2">
+              <div class="lc-field">
                 <label class="lc-lbl" for="lcMarLeft">Lewy (mm)</label>
                 <input type="number" id="lcMarLeft" class="lc-input" value="20" min="0" step="1">
               </div>
-              <div>
+              <div class="lc-field">
                 <label class="lc-lbl" for="lcMarRight">Prawy (mm)</label>
                 <input type="number" id="lcMarRight" class="lc-input" value="20" min="0" step="1">
               </div>
@@ -113,150 +113,151 @@
             <p class="lc-note">Formatki nie są rozmieszczane w marginesach. Przycięcie marginesów jest uwzględniane w układzie i kolejności cięć.</p>
           </div>
 
-          <div class="lc-card">
+          <div class="lc-box">
             <h2>Ceny jednostkowe</h2>
-            <div class="lc-form-group">
+            <div class="lc-field">
               <label class="lc-lbl" for="lcCutPrice">Cena cięcia (zł za cięcie jednej formatki)</label>
               <input type="number" id="lcCutPrice" class="lc-input" value="0" min="0" step="0.01">
             </div>
-            <div class="lc-form-group">
+            <div class="lc-field">
               <label class="lc-lbl" for="lcEdgePrice">Cena okleinowania (zł za metr bieżący krawędzi)</label>
               <input type="number" id="lcEdgePrice" class="lc-input" value="0" min="0" step="0.01">
             </div>
-            <div class="lc-form-group">
+            <div class="lc-field">
               <label class="lc-lbl" for="lcCalcMode">Sposób rozliczenia materiału</label>
               <select id="lcCalcMode" class="lc-select">
                 <option value="parts_m2">Formatki (cena za m²)</option>
                 <option value="sheets_m2">Całe płyty (cena za m²)</option>
               </select>
             </div>
-            <div class="lc-form-group">
+            <div class="lc-field">
               <label class="lc-lbl" for="lcMatPrice">Cena materiału (zł za m²)</label>
               <input type="number" id="lcMatPrice" class="lc-input" value="0" min="0" step="0.01">
             </div>
           </div>
         </div>
 
-        <div class="lc-card" style="margin-top:1.15rem">
+        <aside class="lc-box lc-right-card">
           <h2>Projekty</h2>
-          <div class="lc-proj-bar">
-            <div>
-              <label class="lc-lbl" for="lcProjName">Nazwa projektu</label>
-              <input type="text" id="lcProjName" class="lc-input" value="Projekt 1">
-            </div>
+          <div class="lc-field">
+            <label class="lc-lbl" for="lcProjName">Nazwa projektu</label>
+            <input type="text" id="lcProjName" class="lc-input" value="Projekt 1">
+          </div>
+          <div class="lc-btn-stack">
             <button type="button" id="lcSaveBtn" class="btn small">Zapisz w przeglądarce</button>
             <button type="button" id="lcExportJsonBtn" class="btn small ghost">Eksportuj plik JSON</button>
             <button type="button" id="lcImportJsonBtn" class="btn small ghost">Otwórz plik JSON</button>
             <input type="file" id="lcJsonFileInput" accept=".json,application/json" hidden>
           </div>
           <p class="lc-note" id="lcProjectHint">Zapis działa lokalnie w przeglądarce; plik JSON pozwala przenieść projekt na inne urządzenie.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- FORMATKI -->
+    <section data-lc-view="formatki" hidden>
+      <div class="lc-box">
+        <div class="lc-bar">
+          <div class="lc-bar-left">
+            <button type="button" id="lcAddRowBtn" class="btn small">Dodaj wiersz</button>
+            <button type="button" id="lcImportCsvBtn" class="btn small ghost">Importuj z Excel / CSV</button>
+            <button type="button" id="lcClearPartsBtn" class="btn small ghost">Wyczyść listę</button>
+            <input type="file" id="lcCsvFileInput" accept=".csv,.txt" hidden>
+          </div>
+          <div class="lc-stats" id="lcPartsTopStats">3 pozycje · 3 szt. · 0,18 m² formatek</div>
         </div>
-      </section>
 
-      <!-- ZAKŁADKA: FORMATKI -->
-      <section data-lc-view="formatki" hidden>
-        <div class="lc-card">
-          <div class="lc-toolbar">
-            <div class="lc-toolbar-left">
-              <button type="button" id="lcAddRowBtn" class="btn small">Dodaj wiersz</button>
-              <button type="button" id="lcImportCsvBtn" class="btn small ghost">Importuj z Excel / CSV</button>
-              <button type="button" id="lcClearPartsBtn" class="btn small ghost">Wyczyść listę</button>
-              <input type="file" id="lcCsvFileInput" accept=".csv,.txt" hidden>
-            </div>
-            <div class="lc-stats-line" id="lcPartsTopStats">3 pozycje · 3 szt. · 0,18 m² formatek</div>
-          </div>
-
-          <div class="lc-table-scroll">
-            <table class="lc-table">
-              <thead>
-                <tr>
-                  <th>Lp</th>
-                  <th>Oznaczenie</th>
-                  <th>Długość (mm)</th>
-                  <th>Str. dł.</th>
-                  <th>Szerokość (mm)</th>
-                  <th>Str. szer.</th>
-                  <th>m² element</th>
-                  <th>Ilość (szt.)</th>
-                  <th>m² suma</th>
-                  <th>Materiał / kolor</th>
-                  <th>Okleina: D1 D2 S1 S2</th>
-                  <th>Okleina (mb)</th>
-                  <th>Akcje</th>
-                </tr>
-              </thead>
-              <tbody id="lcPartsBody"></tbody>
-            </table>
-          </div>
-
-          <div class="lc-summary-strip" id="lcPartsBottomStats"></div>
+        <div class="lc-table-box">
+          <table class="lc-table">
+            <thead>
+              <tr>
+                <th>Lp</th>
+                <th>Oznaczenie</th>
+                <th>Długość (mm)</th>
+                <th>Str. dł.</th>
+                <th>Szerokość (mm)</th>
+                <th>Str. szer.</th>
+                <th>m² element</th>
+                <th>Ilość (szt.)</th>
+                <th>m² suma</th>
+                <th>Materiał / kolor</th>
+                <th>Okleina: D1 D2 S1 S2</th>
+                <th>Okleina (mb)</th>
+                <th>Akcje</th>
+              </tr>
+            </thead>
+            <tbody id="lcPartsBody"></tbody>
+          </table>
         </div>
-      </section>
 
-      <!-- ZAKŁADKA: ROZKROJ 2D -->
-      <section data-lc-view="2d" hidden>
-        <div class="lc-2d-layout">
-          <div class="lc-2d-side">
-            <div class="lc-verify-box" id="lc2dVerifyBox"></div>
+        <div class="lc-bottom-bar" id="lcPartsBottomStats"></div>
+      </div>
+    </section>
 
-            <div class="lc-card" style="padding:1rem">
-              <h2 style="margin-bottom:.65rem;font-size:1rem" id="lc2dSheetsTitle">Płyty (1)</h2>
-              <div class="lc-sheet-pick" id="lc2dSheetList"></div>
-            </div>
-
-            <div class="lc-card" style="padding:1rem">
-              <h2 style="margin-bottom:.35rem;font-size:1rem" id="lc2dPartsTitle">Formatki na płycie 1</h2>
-              <p class="lc-note" style="margin-top:0">Wymiary: poziomo × pionowo, tak jak na rysunku. Odpad obejmuje marginesy, rzaz i niewykorzystane obszary.</p>
-              <ul class="lc-part-list" id="lc2dPartsOnSheet"></ul>
-            </div>
+    <!-- ROZKROJ 2D -->
+    <section data-lc-view="2d" hidden>
+      <div class="lc-2d-wrap">
+        <div class="lc-2d-side">
+          <div class="lc-verify-card" id="lc2dVerifyBox"></div>
+          <div class="lc-box lc-box-compact">
+            <h2 id="lc2dSheetsTitle">Płyty (1)</h2>
+            <div class="lc-sheet-list" id="lc2dSheetList"></div>
           </div>
-
-          <div class="lc-card">
-            <div class="lc-canvas-head">
-              <div class="lc-canvas-meta" id="lc2dCanvasHeadMeta"></div>
-              <div class="lc-canvas-controls">
-                <button type="button" id="lcToggleCuts" class="btn small">Linie cięć</button>
-                <button type="button" id="lcToggleDims" class="btn small">Wymiary</button>
-                <button type="button" id="lcZoomOut" class="btn small ghost">-</button>
-                <span class="lc-zoom-readout" id="lcZoomVal">100%</span>
-                <button type="button" id="lcZoomIn" class="btn small ghost">+</button>
-                <button type="button" id="lcZoomFit" class="btn small ghost">Dopasuj</button>
-              </div>
-            </div>
-
-            <div class="lc-stage-scroll" id="lc2dSvgHolder"></div>
+          <div class="lc-box lc-box-compact">
+            <h2 id="lc2dPartsTitle">Formatki na płycie 1</h2>
+            <p class="lc-note" style="margin-top:0">Wymiary: poziomo × pionowo, tak jak na rysunku. Odpad obejmuje marginesy, rzaz i niewykorzystane obszary.</p>
+            <ul class="lc-parts-list" id="lc2dPartsOnSheet"></ul>
           </div>
         </div>
-      </section>
 
-      <!-- ZAKŁADKA: KOSZTORYS -->
-      <section data-lc-view="kosztorys" hidden>
-        <div class="lc-card">
-          <h2>Kosztorys projektu</h2>
-          <div class="lc-kpi-grid" id="lcCostKpis"></div>
-          <p class="lc-note">Stawki jednostkowe możesz zmienić w zakładce <strong>Projekt</strong>.</p>
+        <div class="lc-box">
+          <div class="lc-bar">
+            <div class="lc-stats" id="lc2dCanvasHeadMeta"></div>
+            <div class="lc-bar-left">
+              <button type="button" id="lcToggleCuts" class="btn small">Linie cięć</button>
+              <button type="button" id="lcToggleDims" class="btn small">Wymiary</button>
+              <button type="button" id="lcZoomOut" class="btn small ghost">-</button>
+              <span class="lc-zoom-txt" id="lcZoomVal">100%</span>
+              <button type="button" id="lcZoomIn" class="btn small ghost">+</button>
+              <button type="button" id="lcZoomFit" class="btn small ghost">Dopasuj</button>
+            </div>
+          </div>
+          <div class="lc-svg-box" id="lc2dSvgHolder"></div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- ZAKŁADKA: WARIANTY -->
-      <section data-lc-view="warianty" hidden>
-        <div class="lc-card">
-          <h2>Porównanie wariantów rozkroju</h2>
-          <div class="lc-variant-grid" id="lcVariantsGrid"></div>
-        </div>
-      </section>
+    <!-- KOSZTORYS -->
+    <section data-lc-view="kosztorys" hidden>
+      <div class="lc-box">
+        <h2>Kosztorys projektu</h2>
+        <div class="lc-kpis" id="lcCostKpis"></div>
+        <p class="lc-note">Stawki jednostkowe możesz zmienić w zakładce <strong>Projekt</strong>.</p>
+      </div>
+    </section>
 
-      <!-- ZAKŁADKA: DRUK / PDF -->
-      <section data-lc-view="druk" hidden>
-        <div class="lc-card">
-          <h2>Druk / eksport PDF</h2>
+    <!-- WARIANTY -->
+    <section data-lc-view="warianty" hidden>
+      <div class="lc-box">
+        <h2>Porównanie wariantów rozkroju</h2>
+        <div class="lc-variants" id="lcVariantsGrid"></div>
+      </div>
+    </section>
+
+    <!-- DRUK / PDF -->
+    <section data-lc-view="druk" hidden>
+      <div class="lc-druk-grid">
+        <div class="lc-box">
+          <h2>Podsumowanie wydruku</h2>
           <div id="lcPrintSummary"></div>
-          <div style="margin-top:1rem">
-            <button type="button" id="lcPrintNowBtn" class="btn">Drukuj / zapisz jako PDF</button>
-          </div>
         </div>
-      </section>
-    </main>
+        <aside class="lc-box lc-right-card">
+          <h2>Eksport</h2>
+          <p class="lc-note" style="margin-top:0">Wydrukuj arkusz rozkroju lub zapisz go jako PDF.</p>
+          <button type="button" id="lcPrintNowBtn" class="btn small" style="width:100%">Drukuj / zapisz jako PDF</button>
+        </aside>
+      </div>
+    </section>
   </div>
 </div>
 
