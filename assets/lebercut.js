@@ -321,13 +321,13 @@
       return `
         <tr>
           <td class="lc-num">${idx + 1}</td>
-          <td><input type="text" class="lc-cell-input is-text" data-field="name" data-id="${p.id}" value="${esc(p.name)}"></td>
-          <td><input type="number" class="lc-cell-input" data-field="length" data-id="${p.id}" value="${p.length}" min="1" step="1"></td>
+          <td><input type="text" class="lc-cell-in is-text" data-field="name" data-id="${p.id}" value="${esc(p.name)}"></td>
+          <td><input type="number" class="lc-cell-in" data-field="length" data-id="${p.id}" value="${p.length}" min="1" step="1"></td>
           <td style="text-align:center"><input type="checkbox" data-field="rotL" data-id="${p.id}" ${p.rotL ? "checked" : ""}></td>
-          <td><input type="number" class="lc-cell-input" data-field="width" data-id="${p.id}" value="${p.width}" min="1" step="1"></td>
+          <td><input type="number" class="lc-cell-in" data-field="width" data-id="${p.id}" value="${p.width}" min="1" step="1"></td>
           <td style="text-align:center"><input type="checkbox" data-field="rotW" data-id="${p.id}" ${p.rotW ? "checked" : ""}></td>
           <td class="lc-num">${fmtNum(m2One, 3)}</td>
-          <td><input type="number" class="lc-cell-input" data-field="qty" data-id="${p.id}" value="${p.qty}" min="1" step="1"></td>
+          <td><input type="number" class="lc-cell-in" data-field="qty" data-id="${p.id}" value="${p.qty}" min="1" step="1"></td>
           <td class="lc-num">${fmtNum(m2Sum, 3)}</td>
           <td>${esc(state.board.decor || state.board.material)}</td>
           <td>
