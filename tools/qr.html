@@ -6,12 +6,11 @@
 <meta name="theme-color" content="#0d0e0f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23191919'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%23F5322C'/%3E%3C/svg%3E">
 <title>qrgen | nobodymichael</title>
-<link rel="stylesheet" href="../style.css">
-<script src="../site.js"></script>
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/site.js"></script>
 <style>
 .qgrid{display:grid;gap:1.25rem;margin:1.5rem 0;grid-template-areas:"in" "out" "opt"}
 @media(min-width:48rem){.qgrid{grid-template-columns:1fr 22rem;grid-template-areas:"in out" "opt out";align-items:start}}
-.qgrid>*{animation:rise .6s both}.qgrid>.q-out{animation-delay:.1s}.qgrid>.q-opt{animation-delay:.2s}
 .q-in{grid-area:in}.q-out{grid-area:out}.q-opt{grid-area:opt}
 .glass{padding:1.25rem;border:1.5px solid var(--edge);border-radius:28px;background:linear-gradient(135deg,var(--sheen),transparent 45%),var(--glass);-webkit-backdrop-filter:blur(34px) saturate(200%);backdrop-filter:blur(34px) saturate(200%);box-shadow:inset 0 1.5px 0 var(--edge),inset 0 -1px 0 var(--edge),0 16px 40px var(--sh);color:var(--ink)}
 .q-out .qr{width:min(100%,22rem);margin-inline:auto}
@@ -120,7 +119,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:2px solid var(-
 </main>
 </div>
 <footer class="wrap">Kod powstaje lokalnie w przeglądarce. Nic nie jest wysyłane.</footer>
-<script src="../qrcode.js"></script>
+<script src="../assets/qrcode.js"></script>
 <script>
 (function(){
   const $=i=>document.getElementById(i), INK0="#191919", PAP0="#FFFFFF";
@@ -128,7 +127,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:2px solid var(-
     qrcode.stringToBytes=qrcode.stringToBytesFuncs["UTF-8"];
   }
   const inp=$("in"), box=$("qr"), status=$("status"), fmtEl=$("fmt"), png=$("png"), svgB=$("svg"), ink=$("ink"), paper=$("paper");
-  let fmt="qr", cur=null, animate=true, ov=null;
+  let fmt="qr", cur=null, ov=null;
   const C=()=>ov||{i:ink.value||INK0,p:paper.value||PAP0};
 
   const NATIVE=[["qr","QR"],["code128","Code 128"],["ean13","EAN-13"]];
@@ -217,17 +216,15 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:2px solid var(-
     return r<3?"Za mały kontrast, kod może się nie zeskanować.":a>b?"Odwrócone kolory: nie każdy czytnik odczyta taki kod.":"";
   }
 
-  function empty(msg){box.classList.remove("scan"); box.classList.add("empty"); box.textContent=msg;}
+  function empty(msg){box.classList.add("empty"); box.textContent=msg;}
   function render0(){
     const info=compose(); cur=null; png.disabled=svgB.disabled=true; status.textContent="";
-    if(info.kind==="empty"){empty("Kod pojawi się tutaj."); animate=true; return;}
+    if(info.kind==="empty"){empty("Kod pojawi się tutaj."); return;}
     try{cur=makeSvg(fmt,info.text);}catch(e){empty("Nie da się utworzyć kodu."); status.textContent=(e&&e.pl)||"Za dużo tekstu albo znaki niedozwolone w tym formacie."; return;}
     box.classList.remove("empty"); box.innerHTML=cur; png.disabled=svgB.disabled=false;
-    if(animate){box.classList.remove("scan"); void box.offsetWidth; box.classList.add("scan"); animate=false;}
     status.textContent=info.kind==="linkAdded"?"Wykryto link, dodano https://: "+info.text:warn()||(info.kind==="link"?"Wykryto link.":"");
   }
   function render(){render0(); P.update();}
-  box.addEventListener("animationend",e=>{if(e.target===box) box.classList.remove("scan");});
 
   function save(blob,name){
     if(!blob) return;
@@ -420,7 +417,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:2px solid var(-
       if($("fmt_"+v)) return;
       const r=document.createElement("input"), l=document.createElement("label");
       r.type="radio"; r.name="fmt"; r.id="fmt_"+v; r.checked=v===fmt;
-      r.onchange=()=>{fmt=v; animate=true; setRule(); render();};
+      r.onchange=()=>{fmt=v; setRule(); render();};
       l.htmlFor=r.id; l.innerHTML=`<span class="th">${thumb(v)}</span><span>${n}</span>`;
       fmtEl.append(r,l);
     });
@@ -431,7 +428,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:2px solid var(-
   $("reset").onclick=()=>{ink.value=INK0; paper.value=PAP0; render();};
 
   addFormats(NATIVE);
-  const sc=document.createElement("script"); sc.src="bwip-js-min.js";
+  const sc=document.createElement("script"); sc.src="../assets/bwip-js-min.js";
   sc.onload=()=>{if(window.bwipjs&&bwipjs.toSVG) addFormats(BW);};
   document.head.appendChild(sc);
   setRule(); render();
@@ -439,3 +436,365 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:2px solid var(-
 </script>
 </body>
 </html>
+```[cite: 4, 11]
+
+### 2. `tools/convert.html`
+```html
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d0e0f">
+<title>konwerter — nobodymichael</title>
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/site.js"></script>
+<style>
+.drop{border:2px dashed var(--line);border-radius:20px;padding:2rem 1rem;text-align:center;cursor:pointer;background:var(--field);margin-bottom:1.25rem}
+.drop:hover,.drop.drag{border-color:var(--red);background:rgba(245,50,44,.08)}
+input[type=range]{width:100%;accent-color:var(--red);cursor:pointer}
+input[type=number]{width:100%;font:inherit;font-weight:600;padding:.7rem;border:2px solid var(--edge);border-radius:14px;background:var(--field);color:var(--ink)}
+.prev-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:.6rem}
+.prev-wrap img{max-width:100%;max-height:14rem;border-radius:14px;object-fit:contain}
+.badge{padding:.35rem .75rem;border-radius:999px;background:var(--field);border:2px solid var(--edge);font-size:.85rem;font-weight:800}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><a class="brand" href="../">nobodymichael</a></header>
+<main>
+<h1>konwerter</h1>
+<p class="lead">Zmienia format (PNG, WebP, JPG), skaluje rozdzielczość i zmniejsza wagę pliku bez wysyłania na serwer.</p>
+
+<div class="qrgrid">
+  <div>
+    <div class="drop" id="drop">
+      <strong>Wybierz lub upuść obraz</strong>
+      <p class="hint" id="fname">Obsługuje JPG, PNG, WebP, GIF, BMP</p>
+      <input type="file" id="file" accept="image/*" hidden>
+    </div>
+
+    <div class="f">
+      <p class="field">Format wyjściowy</p>
+      <div class="chips" id="fmt">
+        <input type="radio" name="f" id="f_png" value="image/png" checked><label for="f_png">PNG</label>
+        <input type="radio" name="f" id="f_webp" value="image/webp"><label for="f_webp">WebP</label>
+        <input type="radio" name="f" id="f_jpeg" value="image/jpeg"><label for="f_jpeg">JPG</label>
+      </div>
+    </div>
+
+    <div class="f" id="qbox" hidden>
+      <label class="field" for="qual">Jakość kompresji: <span id="qval">85%</span></label>
+      <input type="range" id="qual" min="10" max="100" value="85">
+    </div>
+
+    <div class="f">
+      <label class="field" for="maxw">Maksymalna szerokość w px (opcjonalnie)</label>
+      <input type="number" id="maxw" placeholder="Zostaw puste, aby zachować oryginał" min="16" max="10000">
+    </div>
+
+    <div class="row">
+      <button class="btn" id="dl" type="button" disabled>Pobierz plik</button>
+    </div>
+    <p class="status" id="st"></p>
+  </div>
+
+  <div class="qr" id="box">
+    <span>Podgląd wyniku</span>
+  </div>
+</div>
+</main>
+</div>
+<footer class="wrap">Bez śledzenia i zewnętrznych skryptów. <a href="https://github.com/nobodymichael">GitHub</a></footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const drop = $('drop'), fileInp = $('file'), qual = $('qual'), qval = $('qval'), maxw = $('maxw'), dlBtn = $('dl'), box = $('box'), st = $('st');
+let srcImg = null, origSize = 0, origName = '', outBlob = null, outName = '', prevUrl = null, tmr;
+const later = () => { clearTimeout(tmr); tmr = setTimeout(render, 150); };
+
+drop.onclick = () => fileInp.click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('drag'); };
+drop.ondragleave = () => drop.classList.remove('drag');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('drag'); if (e.dataTransfer.files[0]) load(e.dataTransfer.files[0]); };
+fileInp.onchange = () => { if (fileInp.files[0]) load(fileInp.files[0]); };
+
+document.querySelectorAll('input[name="f"]').forEach(r => r.onchange = () => {
+  $('qbox').hidden = r.value === 'image/png';
+  render();
+});
+qual.oninput = () => { qval.textContent = qual.value + '%'; later(); };
+maxw.oninput = later;
+
+dlBtn.onclick = () => {
+  if (!outBlob) return;
+  const a = document.createElement('a');
+  const u = URL.createObjectURL(outBlob);
+  a.href = u;
+  a.download = outName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 1000);
+};
+
+function load(file) {
+  origSize = file.size;
+  origName = file.name.replace(/\.[^.]+$/, '') || 'obraz';
+  $('fname').textContent = `${file.name} (${(origSize / 1024).toFixed(1)} KB)`;
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => { srcImg = img; URL.revokeObjectURL(url); render(); };
+  img.onerror = () => { URL.revokeObjectURL(url); st.textContent = 'Nie udało się wczytać obrazu.'; };
+  img.src = url;
+}
+
+function render() {
+  if (!srcImg) return;
+  const mime = document.querySelector('input[name="f"]:checked').value;
+  const ext = mime === 'image/webp' ? '.webp' : mime === 'image/png' ? '.png' : '.jpg';
+  outName = origName + ext;
+
+  let w = srcImg.naturalWidth, h = srcImg.naturalHeight;
+  const limit = parseInt(maxw.value, 10);
+  if (limit > 0 && w > limit) {
+    h = Math.max(1, Math.round(h * (limit / w)));
+    w = limit;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (mime === 'image/jpeg') {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+  }
+  ctx.drawImage(srcImg, 0, 0, w, h);
+
+  canvas.toBlob(blob => {
+    if (!blob) return;
+    outBlob = blob;
+    const diff = origSize > 0 ? (((blob.size - origSize) / origSize) * 100).toFixed(0) : 0;
+    const sign = diff > 0 ? '+' : '';
+    if (prevUrl) URL.revokeObjectURL(prevUrl);
+    prevUrl = URL.createObjectURL(blob);
+    box.innerHTML = `<div class="prev-wrap"><img src="${prevUrl}" alt=""><span class="badge">${(blob.size / 1024).toFixed(1)} KB (${sign}${diff}%)</span><small>${w}×${h} px</small></div>`;
+    dlBtn.disabled = false;
+    st.textContent = 'Gotowe do pobrania.';
+  }, mime, qual.value / 100);
+}
+</script>
+</body>
+</html>
+```[cite: 4, 9]
+
+### 3. `tools/exif.html`
+```html
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d0e0f">
+<title>exif cleaner — nobodymichael</title>
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/site.js"></script>
+<style>
+.drop{
+  position:relative;overflow:hidden;
+  border:2px dashed var(--line);border-radius:20px;padding:2.2rem 1rem;
+  text-align:center;cursor:pointer;
+  background:var(--field)
+}
+.drop:hover,.drop.drag{border-color:var(--red);background:rgba(245,50,44,.1)}
+.meta{margin-top:1.25rem;font-size:.92rem;display:grid;gap:.45rem}
+.meta div{
+  padding:.55rem .8rem;border-radius:12px;
+  background:var(--field);border:1.5px solid var(--edge);
+  display:flex;justify-content:space-between;gap:1rem
+}
+.meta div.gps-alert{border-color:var(--red);background:rgba(245,50,44,.12)}
+.meta span:last-child{font-weight:800;text-align:right;word-break:break-all}
+.prev-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:.75rem}
+.prev-wrap img{max-width:100%;max-height:15rem;border-radius:14px;object-fit:contain;box-shadow:0 10px 26px var(--sh)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><a class="brand" href="../">nobodymichael</a></header>
+<main>
+<h1>exif cleaner</h1>
+<p class="lead">Sprawdza ukryte metadane zdjęcia (GPS, model aparatu, datę) i tworzy czysty plik bez śladów.</p>
+
+<div class="qrgrid">
+  <div>
+    <div class="drop" id="drop">
+      <strong>Kliknij lub upuść zdjęcie tutaj</strong>
+      <p class="hint">JPG, PNG, WebP — przetwarzane wyłącznie lokalnie</p>
+      <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden>
+    </div>
+
+    <div class="meta" id="meta" hidden></div>
+
+    <div class="row">
+      <button class="btn" id="dl" type="button" disabled>Pobierz czyste zdjęcie</button>
+      <button class="btn ghost" id="clr" type="button" disabled>Wyczyść</button>
+    </div>
+    <p class="status" id="st"></p>
+  </div>
+
+  <div class="qr" id="box">
+    <span>Podgląd zdjęcia</span>
+  </div>
+</div>
+</main>
+</div>
+<footer class="wrap">Bez śledzenia i zewnętrznych skryptów. <a href="https://github.com/nobodymichael">GitHub</a></footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const drop = $('drop'), fileInp = $('file'), metaBox = $('meta'), dlBtn = $('dl'), clrBtn = $('clr'), box = $('box'), st = $('st');
+let cleanBlob = null, cleanName = '', prevUrl = null;
+
+drop.onclick = () => fileInp.click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('drag'); };
+drop.ondragleave = () => drop.classList.remove('drag');
+drop.ondrop = e => {
+  e.preventDefault(); drop.classList.remove('drag');
+  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+};
+fileInp.onchange = () => { if (fileInp.files[0]) processFile(fileInp.files[0]); };
+
+clrBtn.onclick = () => {
+  cleanBlob = null; fileInp.value = '';
+  metaBox.hidden = true; metaBox.innerHTML = '';
+  if (prevUrl) { URL.revokeObjectURL(prevUrl); prevUrl = null; }
+  box.innerHTML = '<span>Podgląd zdjęcia</span>';
+  dlBtn.disabled = true; clrBtn.disabled = true; st.textContent = '';
+};
+
+dlBtn.onclick = () => {
+  if (!cleanBlob) return;
+  const a = document.createElement('a');
+  const u = URL.createObjectURL(cleanBlob);
+  a.href = u;
+  a.download = cleanName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 1000);
+};
+
+async function processFile(file) {
+  st.textContent = 'Analizowanie...';
+  const buf = await file.arrayBuffer();
+  const info = scanExif(new DataView(buf));
+
+  metaBox.innerHTML = '';
+  const rows = [
+    ['Nazwa pliku', file.name, false],
+    ['Rozmiar oryginału', (file.size / 1024).toFixed(1) + ' KB', false],
+    ['Metadane', info.hasMeta ? 'Wykryto (' + info.tags.join(', ') + ')' : 'Nie wykryto', info.hasMeta],
+    ['Urządzenie', info.device || 'Brak danych', false],
+    ['Dane GPS', info.gps ? 'TAK (ryzyko wycieku lokalizacji)' : 'Nie wykryto', info.gps]
+  ];
+  rows.forEach(([k, v, alert]) => {
+    const d = document.createElement('div');
+    if (alert) d.className = 'gps-alert';
+    const s1 = document.createElement('span'); s1.textContent = k;
+    const s2 = document.createElement('span'); s2.textContent = v;
+    d.append(s1, s2);
+    metaBox.appendChild(d);
+  });
+  metaBox.hidden = false;
+
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+
+    const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+    const ext = outType === 'image/png' ? '.png' : '.jpg';
+    cleanName = (file.name.replace(/\.[^.]+$/, '') || 'obraz') + '_clean' + ext;
+
+    canvas.toBlob(blob => {
+      URL.revokeObjectURL(url);
+      if (!blob) return;
+      cleanBlob = blob;
+      if (prevUrl) URL.revokeObjectURL(prevUrl);
+      prevUrl = URL.createObjectURL(blob);
+      box.innerHTML = `<div class="prev-wrap"><img src="${prevUrl}" alt=""><small>${img.naturalWidth}×${img.naturalHeight} px • ${(blob.size / 1024).toFixed(1)} KB</small></div>`;
+      dlBtn.disabled = false;
+      clrBtn.disabled = false;
+      st.textContent = 'Metadane usunięte. Plik gotowy do pobrania.';
+    }, outType, 0.94);
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    st.textContent = 'Nie udało się przetworzyć obrazu.';
+  };
+  img.src = url;
+}
+
+function tiff(v, s) {
+  const le = v.getUint16(s) === 0x4949, u16 = o => v.getUint16(o, le), u32 = o => v.getUint32(o, le), r = {};
+  if (u16(s + 2) !== 42) return r;
+  const o = s + u32(s + 4), n = u16(o);
+  const str = e => { const c = u32(e + 4), p = c > 4 ? s + u32(e + 8) : e + 8; let t = ''; for (let i = 0; i < c - 1 && p + i < v.byteLength; i++) t += String.fromCharCode(v.getUint8(p + i)); return t.trim(); };
+  for (let i = 0; i < n; i++) {
+    const e = o + 2 + i * 12; if (e + 12 > v.byteLength) break;
+    const t = u16(e);
+    if (t === 0x8825) r.gps = true;
+    if (t === 0x010F) r.make = str(e);
+    if (t === 0x0110) r.model = str(e);
+  }
+  return r;
+}
+
+function scanExif(v) {
+  const out = { hasMeta: false, gps: false, tags: [], device: '' };
+  const add = t => { out.hasMeta = true; if (!out.tags.includes(t)) out.tags.push(t); };
+  const merge = r => { if (r.gps) out.gps = true; if (r.make || r.model) out.device = [r.make, r.model].filter(Boolean).join(' '); };
+  const ascii = (o, n) => { let t = ''; for (let i = 0; i < n && o + i < v.byteLength; i++) t += String.fromCharCode(v.getUint8(o + i)); return t; };
+  try {
+    if (v.getUint16(0) === 0xFFD8) {
+      let o = 2;
+      while (o + 4 < v.byteLength) {
+        const m = v.getUint16(o);
+        if (m === 0xFFDA || (m & 0xFF00) !== 0xFF00) break;
+        const len = v.getUint16(o + 2);
+        if (m === 0xFFE1) {
+          if (ascii(o + 4, 6) === 'Exif\0\0') { add('EXIF'); merge(tiff(v, o + 10)); }
+          else if (ascii(o + 4, 24).startsWith('http://ns.adobe.com/xap')) { add('XMP'); if (ascii(o + 4, Math.min(len, 60000)).includes('GPSLatitude')) out.gps = true; }
+        } else if (m === 0xFFED) add('IPTC');
+        o += 2 + len;
+      }
+    } else if (ascii(1, 3) === 'PNG') {
+      let o = 8;
+      while (o + 12 <= v.byteLength) {
+        const len = v.getUint32(o), t = ascii(o + 4, 4);
+        if (t === 'eXIf') { add('EXIF'); merge(tiff(v, o + 8)); }
+        else if (t === 'iTXt' && ascii(o + 8, 17) === 'XML:com.adobe.xmp') add('XMP');
+        else if (t === 'IDAT') break;
+        o += 12 + len;
+      }
+    } else if (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WEBP') {
+      let o = 12;
+      while (o + 8 <= v.byteLength) {
+        const t = ascii(o, 4), len = v.getUint32(o + 4, true);
+        if (t === 'EXIF') { add('EXIF'); let s = o + 8; if (ascii(s, 6) === 'Exif\0\0') s += 6; merge(tiff(v, s)); }
+        else if (t === 'XMP ') add('XMP');
+        o += 8 + len + (len & 1);
+      }
+    }
+  } catch (err) {}
+  return out;
+}
+</script>
+</body>
+</html>
+```[cite: 4, 10]
