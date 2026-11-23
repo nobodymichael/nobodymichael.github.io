@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0e17">
+<title>LEBERCUT — rozkrój płyt, okleina i cięcie równe</title>
+<style>
+:root{
+  --bg:#0b0e17;--panel:#121726;--panel2:#182034;--ink:#f3f6fc;--muted:#94a3b8;
+  --line:rgba(255,255,255,.12);--line2:rgba(255,255,255,.22);
+  --acc:#0055a5;--acc2:#2589e8;--acc-soft:rgba(37,137,232,.18);
+  --ok:#10b981;--warn:#ef4444;--amber:#f59e0b;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:ui-sans-serif,"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font:500 15px/1.45 var(--sans);-webkit-font-smoothing:antialiased}
+body{
+  background-image:
+    radial-gradient(65rem 28rem at 85% -8%,rgba(0,85,165,.28),transparent 70%),
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px) 0 0/40px 40px,
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px) 0 0/40px 40px;
+}
+.wrap{width:min(100% - 2rem,1320px);margin-inline:auto;padding-bottom:3rem}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;padding:1.2rem 0;border-bottom:1px solid var(--line)}
+.title-grp h1{margin:0;font-size:1.7rem;font-weight:900;letter-spacing:-.03em;display:flex;align-items:center;gap:.65rem}
+.badge{font:700 .72rem/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;padding:.34rem .65rem;border-radius:999px;background:var(--acc-soft);color:#7cc0ff;border:1px solid rgba(37,137,232,.45)}
+.sub{margin:.25rem 0 0;color:var(--muted);font-size:.9rem}
+.tabs{display:flex;gap:.45rem;background:var(--panel);padding:.3rem;border-radius:12px;border:1px solid var(--line)}
+.tab-btn{border:0;background:transparent;color:var(--muted);font:800 .85rem/1 var(--sans);padding:.65rem 1rem;border-radius:9px;cursor:pointer;transition:.15s}
+.tab-btn.active{background:var(--acc);color:#fff;box-shadow:0 0 18px rgba(0,85,165,.45)}
+
+.grid-main{display:grid;gap:1.2rem;margin-top:1.2rem}
+@media(min-width:1060px){.grid-main{grid-template-columns:450px 1fr;align-items:start}}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.15rem;box-shadow:0 14px 32px rgba(0,0,0,.38)}
+.card h2{margin:0 0 .85rem;font-size:1.05rem;font-weight:800;letter-spacing:-.01em;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem}
+.sec{margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--line)}
+.sec:last-child{margin-bottom:0;padding-bottom:0;border-bottom:0}
+
+label{display:block;font:700 .72rem/1.2 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.35rem}
+input,select{
+  width:100%;height:2.5rem;padding:0 .68rem;border-radius:10px;
+  border:1px solid var(--line2);background:var(--panel2);color:var(--ink);
+  font:600 .9rem/1 var(--sans)
+}
+input:focus,select:focus{outline:none;border-color:var(--acc2)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem}
+.row4{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
+@media(max-width:560px){.row3,.row4{grid-template-columns:1fr 1fr}}
+
+.chk-row{display:flex;align-items:center;gap:.5rem;margin-top:.6rem;cursor:pointer;font-weight:700;font-size:.86rem;color:var(--ink)}
+.chk-row input{width:1.02rem;height:1.02rem;accent-color:var(--acc2);cursor:pointer}
+
+.edge-box{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:.7rem .8rem;margin-top:.65rem}
+.edge-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.45rem .8rem;margin-top:.35rem}
+.edge-chk{display:flex;align-items:center;gap:.45rem;font-size:.83rem;font-weight:700;cursor:pointer;color:var(--ink)}
+.edge-chk input{width:.98rem;height:.98rem;accent-color:var(--acc2);cursor:pointer}
+
+.btn{
+  border:1px solid transparent;border-radius:10px;font:800 .86rem/1 var(--sans);
+  padding:.7rem .95rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;transition:.15s
+}
+.btn-acc{background:var(--acc);color:#fff}
+.btn-acc:hover{background:var(--acc2)}
+.btn-ghost{background:var(--panel2);color:var(--ink);border-color:var(--line2)}
+.btn-ghost:hover{border-color:var(--acc2);color:#93c8ff}
+.btn-danger{background:rgba(239,68,68,.15);color:#fca5a5;border-color:rgba(239,68,68,.35)}
+.btn-danger:hover{background:rgba(239,68,68,.26)}
+.btn-sm{padding:.45rem .65rem;font-size:.78rem;height:auto}
+.btn-full{width:100%}
+.btn-bar{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.8rem}
+
+.parts-list{display:flex;flex-direction:column;gap:.45rem;margin-top:.75rem;max-height:280px;overflow:auto}
+.part-item{
+  display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+  background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:.55rem .7rem;font-size:.84rem
+}
+.part-meta{font-family:var(--mono);font-size:.8rem}
+.chips{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.25rem}
+.chip{font:700 .68rem/1 var(--mono);padding:.22rem .45rem;border-radius:6px;background:var(--acc-soft);color:#93c8ff;border:1px solid rgba(37,137,232,.35)}
+.chip.ok{background:rgba(16,185,129,.14);color:#6ee7b7;border-color:rgba(16,185,129,.35)}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.7rem;margin-bottom:.95rem}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:.75rem .85rem}
+.kpi .k-lbl{font:700 .68rem/1.2 var(--mono);text-transform:uppercase;color:var(--muted);letter-spacing:.05em}
+.kpi .k-val{font-size:1.3rem;font-weight:900;margin-top:.25rem;font-family:var(--mono)}
+.kpi .k-sub{font-size:.74rem;color:var(--muted);margin-top:.15rem}
+
+.alerts{display:flex;flex-direction:column;gap:.45rem;margin-bottom:.9rem}
+.alert{padding:.62rem .8rem;border-radius:10px;font-size:.84rem;font-weight:600;border:1px solid}
+.alert-warn{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.4);color:#fecaca}
+.alert-info{background:var(--acc-soft);border-color:rgba(37,137,232,.4);color:#bae6fd}
+
+.sheet-card{background:var(--panel2);border:1px solid var(--line2);border-radius:14px;padding:.95rem;margin-bottom:1rem}
+.sheet-hdr{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.6rem}
+.sheet-title{font-weight:900;font-size:.96rem;font-family:var(--mono)}
+.sheet-stats{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.svg-wrap{background:#090c14;border:1px solid var(--line);border-radius:10px;padding:.5rem;overflow:hidden}
+.svg-wrap svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:.9rem;margin-top:.55rem;font-size:.78rem;color:var(--muted);font-family:var(--mono)}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;vertical-align:middle;margin-right:.35rem}
+
+.cut-steps{margin-top:.7rem;padding-top:.65rem;border-top:1px solid var(--line);font-size:.84rem}
+.cut-steps summary{cursor:pointer;font-weight:800;color:#7cc0ff;font-size:.8rem;font-family:var(--mono);text-transform:uppercase}
+.cut-steps ol{margin:.5rem 0 0;padding-left:1.25rem;display:grid;gap:.25rem;font-family:var(--mono);font-size:.78rem;color:var(--ink)}
+
+/* Widok druku / podsumowanie zlecenia */
+.summary-box{background:var(--panel2);border:1px solid var(--line2);border-radius:14px;padding:.95rem;margin-top:1rem}
+.summary-box h3{margin:0 0 .6rem;font-size:.95rem;font-weight:800}
+.print-only-hdr{display:none}
+.print-table{width:100%;border-collapse:collapse;font-size:.84rem;margin-top:.5rem}
+.print-table th,.print-table td{border:1px solid var(--line);padding:.45rem .6rem;text-align:left}
+.print-table th{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;color:var(--muted)}
+
+.eq-box{background:var(--panel2);border:1px solid var(--line2);border-radius:14px;padding:1rem;margin-top:.85rem}
+.eq-big{font-family:var(--mono);font-size:1.55rem;font-weight:900;color:#7cc0ff}
+.eq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.65rem;margin-top:.75rem}
+.eq-cell{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.65rem .75rem;font-family:var(--mono)}
+.eq-cell small{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase}
+.eq-cell strong{font-size:1.05rem;display:block;margin-top:.15rem}
+
+.bar-vis{margin-top:.85rem;background:#090c14;border:1px solid var(--line);border-radius:12px;padding:.75rem}
+.bar-track{display:flex;height:44px;width:100%;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.2)}
+.seg-piece{background:rgba(37,137,232,.35);border-right:1px solid #60a5fa;display:flex;align-items:center;justify-content:center;font:800 .74rem/1 var(--mono);color:#eff6ff;white-space:nowrap;overflow:hidden;padding:0 3px}
+.seg-kerf{background:var(--warn);flex-shrink:0}
+.seg-rem{background:repeating-linear-gradient(45deg,rgba(255,255,255,.06),rgba(255,255,255,.06) 5px,rgba(255,255,255,.14) 5px,rgba(255,255,255,.14) 10px);color:var(--muted);display:flex;align-items:center;justify-content:center;font:700 .7rem/1 var(--mono);padding:0 6px}
+
+.empty{text-align:center;padding:2.2rem 1rem;color:var(--muted);border:1px dashed var(--line2);border-radius:12px}
+[hidden]{display:none!important}
+
+@media print{
+  @page{size:A4 portrait;margin:10mm}
+  body{background:#fff!important;color:#000!important;font-size:11pt}
+  .tabs,.btn-bar,.grid-main>div:first-child,header .sub,.badge,.cut-steps summary{display:none!important}
+  .grid-main{display:block;margin-top:0}
+  .card,.sheet-card,.kpi,.eq-box,.summary-box{background:#fff!important;color:#000!important;border:1px solid #999!important;box-shadow:none!important;break-inside:avoid}
+  .svg-wrap,.bar-vis{background:#fff!important;border-color:#999!important}
+  .print-only-hdr{display:block!important;border-bottom:2px solid #0055a5;padding-bottom:.4rem;margin-bottom:.75rem}
+  .print-table th,.print-table td{border-color:#aaa;color:#000}
+  .kpi .k-val,.eq-big{color:#0055a5!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title-grp">
+      <h1>LEBERCUT <span class="badge">Stolarnia · Castorama Style</span></h1>
+      <p class="sub">Rozkrój płyt, równanie z odpadami kreskowanymi, oklejanie boków i cięcie na równe części.</p>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab-btn active" id="tabRozkroj" role="tab" aria-selected="true">Rozkrój płyt</button>
+      <button type="button" class="tab-btn" id="tabRowne" role="tab" aria-selected="false">Równe cięcia (N części)</button>
+    </div>
+  </header>
+
+  <!-- TRYB 1: ROZKRÓJ PŁYT -->
+  <div id="viewRozkroj" class="grid-main">
+    <div>
+      <div class="card">
+        <h2>1. Materiał bazowy, słoje i piła</h2>
+
+        <div class="sec">
+          <label for="presetMat">Materiał (szybki wybór)</label>
+          <select id="presetMat">
+            <option value="meblowa">Płyta meblowa (2800 × 2070 mm, równanie 20 mm/str., słoje poziomo)</option>
+            <option value="osb">Płyta OSB (2500 × 1250 mm, bez równania, bez słojów)</option>
+            <option value="custom">Własne wymiary płyty i cięcia</option>
+          </select>
+
+          <div class="row2" style="margin-top:.65rem">
+            <div>
+              <label for="stockW">Szerokość płyty (mm)</label>
+              <input type="number" id="stockW" value="2800" min="50" step="1">
+            </div>
+            <div>
+              <label for="stockH">Długość / wys. płyty (mm)</label>
+              <input type="number" id="stockH" value="2070" min="50" step="1">
+            </div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <label>Odjęcie / równanie krawędzi płyty (mm na stronę — zawsze liczone)</label>
+          <div class="row4">
+            <div><label for="trimL">Lewa</label><input type="number" id="trimL" value="20" min="0" max="300" step="1"></div>
+            <div><label for="trimR">Prawa</label><input type="number" id="trimR" value="20" min="0" max="300" step="1"></div>
+            <div><label for="trimT">Góra</label><input type="number" id="trimT" value="20" min="0" max="300" step="1"></div>
+            <div><label for="trimB">Dół</label><input type="number" id="trimB" value="20" min="0" max="300" step="1"></div>
+          </div>
+          <p class="sub" id="usableInfo" style="margin-top:.45rem">Pole po odjęciu: 2760 × 2030 mm</p>
+        </div>
+
+        <div class="sec">
+          <div class="row2">
+            <div>
+              <label for="grainMode">Kierunek słojów (1. wymiar = poziom)</label>
+              <select id="grainMode">
+                <option value="none">Wcale (można obracać 90°)</option>
+                <option value="horizontal" selected>Poziomo (lewo → prawo, jak 1. wymiar)</option>
+                <option value="vertical">Pionowo (góra → dół)</option>
+              </select>
+            </div>
+            <div>
+              <label for="kerf">Rzaz piły (mm)</label>
+              <input type="number" id="kerf" value="4.0" min="0" max="20" step="0.1">
+            </div>
+          </div>
+          <div class="row2" style="margin-top:.65rem">
+            <div>
+              <label for="pricePerPart">Cena za formatkę (1 form. = 1 cięcie, zł)</label>
+              <input type="number" id="pricePerPart" value="5" min="0" step="0.5">
+            </div>
+            <div>
+              <label for="edgeReserve">Zapas na okleinę (mb)</label>
+              <input type="number" id="edgeReserve" value="0.2" min="0" max="10" step="0.1">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1.1rem">
+        <h2>2. Formatka i boki do oklejenia</h2>
+        <div class="row3">
+          <div><label for="pW">1. wym. / szer. (mm)</label><input type="number" id="pW" value="800" min="1" step="1"></div>
+          <div><label for="pH">2. wym. / wys. (mm)</label><input type="number" id="pH" value="400" min="1" step="1"></div>
+          <div><label for="pQty">Ilość (szt.)</label><input type="number" id="pQty" value="2" min="1" max="500" step="1"></div>
+        </div>
+
+        <div style="margin-top:.55rem">
+          <label for="pLabel">Opis formatki (opcjonalnie)</label>
+          <input type="text" id="pLabel" placeholder="np. front, półka, bok">
+        </div>
+
+        <div class="edge-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+            <label style="margin:0">Oklejanie boków formatki</label>
+            <span class="chip" id="liveEdgeCode">0 boków (0.00 mb/szt.)</span>
+          </div>
+          <div class="edge-grid">
+            <label class="edge-chk"><input type="checkbox" id="edTop"> Góra (dł. = 1. wym.)</label>
+            <label class="edge-chk"><input type="checkbox" id="edBottom"> Dół (dł. = 1. wym.)</label>
+            <label class="edge-chk"><input type="checkbox" id="edLeft"> Lewo (dł. = 2. wym.)</label>
+            <label class="edge-chk"><input type="checkbox" id="edRight"> Prawo (dł. = 2. wym.)</label>
+          </div>
+        </div>
+
+        <div class="btn-bar">
+          <button type="button" class="btn btn-acc" id="addPartBtn">+ Dodaj formatkę</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="loadSampleBtn">Przykładowy projekt</button>
+          <button type="button" class="btn btn-danger btn-sm" id="clearPartsBtn">Wyczyść</button>
+        </div>
+
+        <div class="parts-list" id="partsList"></div>
+
+        <div class="btn-bar">
+          <button type="button" class="btn btn-acc btn-full" id="calcRozkrojBtn">Przelicz LEBERCUT</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="print-only-hdr">
+        <h2 style="margin:0">LEBERCUT — Karta rozkroju i oklejania</h2>
+        <div id="printMeta" style="font-size:.85rem;color:#333"></div>
+      </div>
+
+      <h2>
+        <span>Plan cięcia, okleina i wycena</span>
+        <div style="display:flex;gap:.45rem">
+          <select id="printMode" style="height:2.1rem;font-size:.78rem;width:auto">
+            <option value="workshop">Druk: stolarnia + układ płyt</option>
+            <option value="client">Druk: kwit / podsumowanie zlecenia</option>
+          </select>
+          <button type="button" class="btn btn-acc btn-sm" id="printBtn">Drukuj / PDF</button>
+        </div>
+      </h2>
+
+      <div class="kpis" id="kpis"></div>
+      <div class="alerts" id="alerts"></div>
+      <div id="sheetsOut"></div>
+      <div class="summary-box" id="orderSummary"></div>
+    </div>
+  </div>
+
+  <!-- TRYB 2: RÓWNE CIĘCIA -->
+  <div id="viewRowne" class="grid-main" hidden>
+    <div class="card">
+      <h2>Cięcie na równe części</h2>
+
+      <div class="sec">
+        <label for="eqTotalLen">Długość materiału (mm)</label>
+        <input type="number" id="eqTotalLen" value="3000" min="10" step="1">
+        <p class="sub" style="margin-top:.35rem">Np. deska 3000 mm (3 m)</p>
+      </div>
+
+      <div class="sec">
+        <label for="eqParts">Liczba równych kawałków</label>
+        <input type="number" id="eqParts" value="5" min="1" max="500" step="1">
+        <p class="sub" style="margin-top:.35rem" id="eqCutsHint">Liczba cięć przelotowych: 4</p>
+      </div>
+
+      <div class="sec">
+        <div class="row2">
+          <div>
+            <label for="eqKerf">Rzaz piły (mm)</label>
+            <input type="number" id="eqKerf" value="4.0" min="0" max="20" step="0.1">
+          </div>
+          <div>
+            <label for="eqTrim">Wyrównanie końców (mm)</label>
+            <input type="number" id="eqTrim" value="0" min="0" max="500" step="0.5">
+          </div>
+        </div>
+        <label class="chk-row"><input type="checkbox" id="eqExtraCut"> Dodatkowy rzaz na koniec (odpad)</label>
+      </div>
+
+      <button type="button" class="btn btn-acc btn-full" id="calcEqBtn">Policz równe części</button>
+    </div>
+
+    <div class="card">
+      <h2>Wynik podziału na równe kawałki</h2>
+      <div id="eqResult"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+
+  // Zakładki
+  const tabRozkroj = $("tabRozkroj"), tabRowne = $("tabRowne");
+  const viewRozkroj = $("viewRozkroj"), viewRowne = $("viewRowne");
+  function setTab(mode){
+    const isR = mode === "rozkroj";
+    tabRozkroj.classList.toggle("active", isR);
+    tabRowne.classList.toggle("active", !isR);
+    tabRozkroj.setAttribute("aria-selected", isR);
+    tabRowne.setAttribute("aria-selected", !isR);
+    viewRozkroj.hidden = !isR;
+    viewRowne.hidden = isR;
+    if(!isR) calcEqual();
+  }
+  tabRozkroj.onclick = () => setTab("rozkroj");
+  tabRowne.onclick = () => setTab("rowne");
+
+  // Presety: meblowa 2800x2070 z równaniem 20mm, OSB 2500x1250 bez równania
+  $("presetMat").onchange = e => {
+    const v = e.target.value;
+    if(v === "meblowa"){
+      $("stockW").value = 2800; $("stockH").value = 2070;
+      $("trimL").value = 20; $("trimR").value = 20; $("trimT").value = 20; $("trimB").value = 20;
+      $("grainMode").value = "horizontal"; $("kerf").value = 4.0;
+    } else if(v === "osb"){
+      $("stockW").value = 2500; $("stockH").value = 1250;
+      $("trimL").value = 0; $("trimR").value = 0; $("trimT").value = 0; $("trimB").value = 0;
+      $("grainMode").value = "none"; $("kerf").value = 4.0;
+    }
+    updateUsable();
+    runRozkroj();
+  };
+
+  function getCfg(){
+    const sw = Math.max(10, +$("stockW").value || 2800);
+    const sh = Math.max(10, +$("stockH").value || 2070);
+    const l = Math.max(0, +$("trimL").value || 0);
+    const r = Math.max(0, +$("trimR").value || 0);
+    const t = Math.max(0, +$("trimT").value || 0);
+    const b = Math.max(0, +$("trimB").value || 0);
+    const grain = $("grainMode").value; // none | horizontal | vertical
+    const kerf = Math.max(0, +$("kerf").value || 0);
+    const pricePerPart = Math.max(0, +$("pricePerPart").value || 0);
+    const edgeReserve = Math.max(0, +$("edgeReserve").value || 0);
+    const uw = Math.max(0, sw - l - r);
+    const uh = Math.max(0, sh - t - b);
+    return { sw, sh, l, r, t, b, grain, kerf, pricePerPart, edgeReserve, uw, uh };
+  }
+
+  function updateUsable(){
+    const g = getCfg();
+    $("usableInfo").textContent = `Pole po odjęciu: ${g.uw} × ${g.uh} mm (z ${g.sw} × ${g.sh} mm)`;
+  }
+
+  // Podgląd zaznaczonych boków przy dodawaniu formatki
+  function getSelectedEdges(){
+    return {
+      top: $("edTop").checked,
+      bottom: $("edBottom").checked,
+      left: $("edLeft").checked,
+      right: $("edRight").checked
+    };
+  }
+
+  function formatEdgeSummary(w, h, ed){
+    const names = [];
+    let mm = 0;
+    if(ed.top){ names.push("Góra"); mm += w; }
+    if(ed.bottom){ names.push("Dół"); mm += w; }
+    if(ed.left){ names.push("Lewo"); mm += h; }
+    if(ed.right){ names.push("Prawo"); mm += h; }
+    const mb = (mm / 1000).toFixed(2);
+    return { names, mm, mb, text: names.length ? `${names.join(", ")} (${mb} mb/szt.)` : "Bez okleiny (0.00 mb/szt.)" };
+  }
+
+  function updateLiveEdge(){
+    const w = Math.max(0, +$("pW").value || 0);
+    const h = Math.max(0, +$("pH").value || 0);
+    const info = formatEdgeSummary(w, h, getSelectedEdges());
+    $("liveEdgeCode").textContent = info.text;
+  }
+
+  ["edTop","edBottom","edLeft","edRight","pW","pH"].forEach(id => {
+    $(id).addEventListener("input", updateLiveEdge);
+    $(id).addEventListener("change", updateLiveEdge);
+  });
+
+  ["stockW","stockH","trimL","trimR","trimT","trimB","grainMode","kerf","pricePerPart","edgeReserve"].forEach(id => {
+    $(id).addEventListener("input", () => { updateUsable(); runRozkroj(); });
+    $(id).addEventListener("change", () => { updateUsable(); runRozkroj(); });
+  });
+
+  $("printMode").onchange = () => {
+    const isClient = $("printMode").value === "client";
+    $("sheetsOut").hidden = isClient;
+    $("orderSummary").scrollIntoView({ behavior:"smooth", block:"nearest" });
+  };
+
+  let parts = [
+    { id:1, w:800, h:400, qty:4, label:"Formatka 1", edges:{ top:true, bottom:true, left:false, right:false } },
+    { id:2, w:600, h:500, qty:2, label:"Półka", edges:{ top:true, bottom:false, left:false, right:false } }
+  ];
+  let nextId = 3;
+
+  function renderPartsList(){
+    const box = $("partsList");
+    if(!parts.length){
+      box.innerHTML = `<div class="empty">Brak formatek. Dodaj wymiary powyżej.</div>`;
+      return;
+    }
+    box.innerHTML = parts.map(p => {
+      const edInfo = formatEdgeSummary(p.w, p.h, p.edges);
+      return `
+        <div class="part-item">
+          <div>
+            <div class="part-meta"><strong>${p.w} × ${p.h} mm</strong> · <span>${p.qty} szt.</span> ${p.label ? `· <span style="color:var(--muted)">${esc(p.label)}</span>` : ""}</div>
+            <div class="chips">
+              <span class="chip ${edInfo.names.length ? "ok" : ""}">Okleina: ${esc(edInfo.text)}</span>
+              <span class="chip">Cięcia: ${p.qty} (koszt ${p.qty * (+$("pricePerPart").value || 5)} zł)</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:.35rem">
+            <button type="button" class="btn btn-ghost btn-sm" data-dec="${p.id}">-</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-inc="${p.id}">+</button>
+            <button type="button" class="btn btn-danger btn-sm" data-del="${p.id}">×</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    box.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+      parts = parts.filter(x => x.id !== +b.dataset.del);
+      renderPartsList(); runRozkroj();
+    });
+    box.querySelectorAll("[data-inc]").forEach(b => b.onclick = () => {
+      const it = parts.find(x => x.id === +b.dataset.inc);
+      if(it){ it.qty++; renderPartsList(); runRozkroj(); }
+    });
+    box.querySelectorAll("[data-dec]").forEach(b => b.onclick = () => {
+      const it = parts.find(x => x.id === +b.dataset.dec);
+      if(it && it.qty > 1){ it.qty--; renderPartsList(); runRozkroj(); }
+    });
+  }
+
+  $("addPartBtn").onclick = () => {
+    const w = +$("pW").value, h = +$("pH").value, qty = Math.max(1, Math.min(500, +$("pQty").value || 1));
+    const label = $("pLabel").value.trim();
+    if(!(w > 0 && h > 0)) return;
+    parts.push({ id: nextId++, w, h, qty, label, edges: getSelectedEdges() });
+    $("pLabel").value = "";
+    renderPartsList();
+    runRozkroj();
+  };
+
+  $("clearPartsBtn").onclick = () => {
+    parts = [];
+    renderPartsList();
+    runRozkroj();
+  };
+
+  $("loadSampleBtn").onclick = () => {
+    $("presetMat").value = "meblowa";
+    $("presetMat").dispatchEvent(new Event("change"));
+    parts = [
+      { id: nextId++, w: 720, h: 450, qty: 4, label: "Drzwiczki", edges:{ top:true, bottom:true, left:true, right:true } },
+      { id: nextId++, w: 600, h: 400, qty: 3, label: "Półka", edges:{ top:true, bottom:false, left:false, right:false } }
+    ];
+    renderPartsList();
+    runRozkroj();
+  };
+
+  $("calcRozkrojBtn").onclick = runRozkroj;
+  $("printBtn").onclick = () => window.print();
+
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  }
+
+  function runRozkroj(){
+    const cfg = getCfg();
+    const k = cfg.kerf;
+    const alerts = [];
+    const sheetsOut = $("sheetsOut");
+    const kpis = $("kpis");
+    const summaryBox = $("orderSummary");
+    $("alerts").innerHTML = "";
+
+    const totalOrderedParts = parts.reduce((s, p) => s + p.qty, 0);
+    // Zgodnie z zasadą: każda formatka = 1 cięcie (5 zł)
+    const cutUnits = totalOrderedParts;
+    const cutCost = cutUnits * cfg.pricePerPart;
+
+    // Okleina: zliczamy dokładnie po zaznaczonych bokach (w mm -> mb)
+    let totalEdgeMm = 0;
+    const edgeSidesCount = { top:0, bottom:0, left:0, right:0 };
+    parts.forEach(p => {
+      const ed = p.edges;
+      if(ed.top){ totalEdgeMm += p.w * p.qty; edgeSidesCount.top += p.qty; }
+      if(ed.bottom){ totalEdgeMm += p.w * p.qty; edgeSidesCount.bottom += p.qty; }
+      if(ed.left){ totalEdgeMm += p.h * p.qty; edgeSidesCount.left += p.qty; }
+      if(ed.right){ totalEdgeMm += p.h * p.qty; edgeSidesCount.right += p.qty; }
+    });
+    const edgeMetersNet = totalEdgeMm / 1000;
+    const edgeMetersWithReserve = edgeMetersNet > 0 ? edgeMetersNet + cfg.edgeReserve : 0;
+
+    if(cfg.uw <= 0 || cfg.uh <= 0){
+      alerts.push({ type:"warn", msg:"Odjęcie krawędzi jest większe lub równe wymiarowi płyty. Zmniejsz odjęcie." });
+      renderAlerts(alerts);
+      kpis.innerHTML = "";
+      sheetsOut.innerHTML = `<div class="empty">Brak pola roboczego na płycie.</div>`;
+      summaryBox.innerHTML = "";
+      return;
+    }
+
+    const expanded = [];
+    parts.forEach(p => {
+      for(let i = 0; i < p.qty; i++){
+        // Pierwszy wymiar (p.w) traktujemy jako poziom / kierunek słojów poziomych
+        expanded.push({
+          w: p.w, h: p.h,
+          label: p.label || `${p.w}×${p.h}`,
+          edges: p.edges
+        });
+      }
+    });
+
+    const unplaced = [];
+    expanded.forEach(it => {
+      const opts = [];
+      // Orientacja bez obrotu: w wzdłuż poziomu (X), h wzdłuż pionu (Y)
+      const canNormal = it.w <= cfg.uw && it.h <= cfg.uh;
+      // Orientacja obrócona o 90°: w idzie pionowo, h idzie poziomo — dozwolona tylko gdy słoje == 'none'
+      const canRot = (cfg.grain === "none") && (it.h <= cfg.uw) && (it.w <= cfg.uh) && (it.w !== it.h);
+
+      if(cfg.grain === "horizontal"){
+        if(canNormal) opts.push({ w: it.w, h: it.h, rot: false });
+      } else if(cfg.grain === "vertical"){
+        // Słoje pionowe: dłuższy/pionowy kierunek wzdłuż Y, jeśli pasuje
+        if(canNormal) opts.push({ w: it.w, h: it.h, rot: false });
+      } else {
+        if(canNormal) opts.push({ w: it.w, h: it.h, rot: false });
+        if(canRot) opts.push({ w: it.h, h: it.w, rot: true });
+      }
+
+      if(!opts.length){
+        alerts.push({ type:"warn", msg:`Formatka ${it.w}×${it.h} mm nie mieści się w polu roboczym ${cfg.uw}×${cfg.uh} mm przy wybranym kierunku słojów.` });
+      } else {
+        unplaced.push({ ...it, opts, mainDim: Math.max(it.w, it.h) });
+      }
+    });
+
+    unplaced.sort((a,b) => b.mainDim - a.mainDim || (b.w*b.h) - (a.w*a.h));
+
+    const sheets = [];
+    function makeSheet(){
+      return { x0: cfg.l, y0: cfg.t, w: cfg.uw, h: cfg.uh, shelves: [], placements: [] };
+    }
+
+    for(const item of unplaced){
+      let placed = false;
+      for(const sh of sheets){
+        if(placeItem(sh, item, k)){ placed = true; break; }
+      }
+      if(!placed){
+        const sh = makeSheet();
+        if(placeItem(sh, item, k)){
+          sheets.push(sh);
+          placed = true;
+        }
+      }
+    }
+
+    function placeItem(sh, item, kerf){
+      let best = null;
+      for(const opt of item.opts){
+        for(let idx = 0; idx < sh.shelves.length; idx++){
+          const s = sh.shelves[idx];
+          const needW = s.usedW > 0 ? kerf + opt.w : opt.w;
+          if(opt.h <= s.h && s.usedW + needW <= sh.w + 1e-6){
+            const x = sh.x0 + (s.usedW > 0 ? s.usedW + kerf : 0);
+            const y = s.y;
+            const waste = (s.h - opt.h) * opt.w;
+            if(!best || waste < best.waste){
+              best = { shelfIdx: idx, newShelf: false, x, y, w: opt.w, h: opt.h, rot: opt.rot, waste };
+            }
+          }
+        }
+        const prev = sh.shelves[sh.shelves.length - 1];
+        const usedY = prev ? (prev.y - sh.y0) + prev.h : 0;
+        const needH = usedY > 0 ? kerf + opt.h : opt.h;
+        if(opt.w <= sh.w + 1e-6 && usedY + needH <= sh.h + 1e-6){
+          const x = sh.x0;
+          const y = sh.y0 + (usedY > 0 ? usedY + kerf : 0);
+          const waste = 1e6 + (sh.h - (usedY + needH)) * sh.w;
+          if(!best || waste < best.waste){
+            best = { shelfIdx: sh.shelves.length, newShelf: true, x, y, w: opt.w, h: opt.h, rot: opt.rot, waste };
+          }
+        }
+      }
+      if(!best) return false;
+
+      if(best.newShelf){
+        sh.shelves.push({ y: best.y, h: best.h, usedW: best.w });
+      } else {
+        const s = sh.shelves[best.shelfIdx];
+        s.usedW = (best.x - sh.x0) + best.w;
+      }
+
+      sh.placements.push({
+        x: best.x, y: best.y,
+        w: best.w, h: best.h,
+        origW: item.w, origH: item.h,
+        label: item.label, edges: item.edges, rot: best.rot
+      });
+      return true;
+    }
+
+    if(k < 3.2){
+      alerts.push({ type:"info", msg:`Tarcza ma ok. 3,2 mm rzazu, a ustawiono ${k} mm — przy kilku cięciach lepiej trzymać ~4 mm.` });
+    }
+    renderAlerts(alerts);
+
+    const totalArea = sheets.length * cfg.sw * cfg.sh;
+    const usedArea = unplaced.reduce((s, p) => s + p.w * p.h, 0);
+    const eff = totalArea > 0 ? ((usedArea / totalArea) * 100).toFixed(1) : "0.0";
+
+    kpis.innerHTML = `
+      <div class="kpi"><div class="k-lbl">Płyty bazowe</div><div class="k-val">${sheets.length} szt.</div><div class="k-sub">${cfg.sw}×${cfg.sh} mm</div></div>
+      <div class="kpi"><div class="k-lbl">Cięcia (1 form. = 1)</div><div class="k-val">${cutUnits} szt.</div><div class="k-sub">koszt: ${cutCost.toFixed(2)} zł</div></div>
+      <div class="kpi"><div class="k-lbl">Okleina netto</div><div class="k-val">${edgeMetersNet.toFixed(2)} mb</div><div class="k-sub">z zapasem: ${edgeMetersWithReserve.toFixed(2)} mb</div></div>
+      <div class="kpi"><div class="k-lbl">Wykorzystanie</div><div class="k-val">${eff}%</div><div class="k-sub">rzaz: ${k} mm · słoje: ${grainLabel(cfg.grain)}</div></div>
+    `;
+
+    sheetsOut.innerHTML = sheets.length
+      ? sheets.map((sh, i) => renderSheet(sh, i, cfg)).join("")
+      : `<div class="empty">Dodaj formatki, aby zobaczyć plan płyty.</div>`;
+
+    $("printMeta").textContent = `Materiał: ${cfg.sw}×${cfg.sh} mm | Odjęcie: L=${cfg.l}, P=${cfg.r}, G=${cfg.t}, D=${cfg.b} mm | Rzaz: ${k} mm | Słoje: ${grainLabel(cfg.grain)}`;
+
+    summaryBox.innerHTML = `
+      <h3>Podsumowanie zlecenia (do wydruku / dla klienta)</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:1.2rem;font-family:var(--mono);font-size:.86rem;margin-bottom:.65rem">
+        <div>Płyty: <strong>${sheets.length} szt.</strong> (${cfg.sw}×${cfg.sh} mm)</div>
+        <div>Liczba formatek / cięć: <strong>${cutUnits}</strong> (${cfg.pricePerPart.toFixed(2)} zł/szt. = <strong>${cutCost.toFixed(2)} zł</strong>)</div>
+        <div>Okleina: <strong>${edgeMetersNet.toFixed(2)} mb</strong> (z zapasem ${cfg.edgeReserve} mb: <strong>${edgeMetersWithReserve.toFixed(2)} mb</strong>)</div>
+      </div>
+      <table class="print-table">
+        <thead>
+          <tr>
+            <th>Lp.</th>
+            <th>Formatka (mm)</th>
+            <th>Ilość</th>
+            <th>Oklejane boki</th>
+            <th>Okleina (mb)</th>
+            <th>Cięcia / kwota</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${parts.map((p, idx) => {
+            const ed = formatEdgeSummary(p.w, p.h, p.edges);
+            const rowMeters = ((ed.mm * p.qty) / 1000).toFixed(2);
+            const rowCost = (p.qty * cfg.pricePerPart).toFixed(2);
+            return `
+              <tr>
+                <td>${idx + 1}</td>
+                <td><strong>${p.w} × ${p.h}</strong> ${p.label ? `<span style="color:var(--muted)">(${esc(p.label)})</span>` : ""}</td>
+                <td>${p.qty} szt.</td>
+                <td>${esc(ed.names.length ? ed.names.join(", ") : "brak")}</td>
+                <td>${rowMeters} mb</td>
+                <td>${p.qty} (${rowCost} zł)</td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function grainLabel(g){
+    if(g === "horizontal") return "poziomo";
+    if(g === "vertical") return "pionowo";
+    return "brak (obrót 90°)";
+  }
+
+  function renderAlerts(list){
+    $("alerts").innerHTML = list.map(a =>
+      `<div class="alert alert-${a.type === "warn" ? "warn" : "info"}">${esc(a.msg)}</div>`
+    ).join("");
+  }
+
+  function renderSheet(sh, idx, cfg){
+    const pad = 75;
+    const vbW = cfg.sw + pad*2;
+    const vbH = cfg.sh + pad*2;
+    const sw = Math.max(2.5, cfg.sw / 360);
+
+    // Kreskowane strefy odjęcia krawędzi płyty (góra, dół, lewo, prawo)
+    const trimDashed = [];
+    if(cfg.t > 0){
+      trimDashed.push(`<rect x="0" y="0" width="${cfg.sw}" height="${cfg.t}" fill="rgba(239,68,68,.12)" stroke="#f87171" stroke-width="${sw}" stroke-dasharray="${sw*4} ${sw*3}"/>`);
+    }
+    if(cfg.b > 0){
+      trimDashed.push(`<rect x="0" y="${cfg.sh - cfg.b}" width="${cfg.sw}" height="${cfg.b}" fill="rgba(239,68,68,.12)" stroke="#f87171" stroke-width="${sw}" stroke-dasharray="${sw*4} ${sw*3}"/>`);
+    }
+    if(cfg.l > 0){
+      trimDashed.push(`<rect x="0" y="${cfg.t}" width="${cfg.l}" height="${cfg.uh}" fill="rgba(239,68,68,.12)" stroke="#f87171" stroke-width="${sw}" stroke-dasharray="${sw*4} ${sw*3}"/>`);
+    }
+    if(cfg.r > 0){
+      trimDashed.push(`<rect x="${cfg.sw - cfg.r}" y="${cfg.t}" width="${cfg.r}" height="${cfg.uh}" fill="rgba(239,68,68,.12)" stroke="#f87171" stroke-width="${sw}" stroke-dasharray="${sw*4} ${sw*3}"/>`);
+    }
+
+    // Kreskowane odpady na płycie (prawo i dół od użytych pasów)
+    const wasteDashed = [];
+    let maxShelfBottom = cfg.t;
+    sh.shelves.forEach(s => {
+      const shelfBottom = s.y + s.h;
+      if(shelfBottom > maxShelfBottom) maxShelfBottom = shelfBottom;
+      const rightStart = cfg.l + s.usedW;
+      const rightW = (cfg.l + cfg.uw) - rightStart;
+      if(rightW > 1){
+        wasteDashed.push(`<rect x="${rightStart}" y="${s.y}" width="${rightW}" height="${s.h}" fill="rgba(148,163,184,.08)" stroke="#94a3b8" stroke-width="${sw*0.9}" stroke-dasharray="${sw*3.5} ${sw*3.5}"/>`);
+      }
+    });
+    const bottomWasteH = (cfg.t + cfg.uh) - maxShelfBottom;
+    if(bottomWasteH > 1){
+      wasteDashed.push(`<rect x="${cfg.l}" y="${maxShelfBottom}" width="${cfg.uw}" height="${bottomWasteH}" fill="rgba(148,163,184,.08)" stroke="#94a3b8" stroke-width="${sw*0.9}" stroke-dasharray="${sw*3.5} ${sw*3.5}"/>`);
+    }
+
+    // Formatki + zaznaczone boki do oklejenia (gruba linia w kolorze bursztynowym/błękitnym)
+    const piecesSvg = sh.placements.map((p, n) => {
+      const fs = Math.max(20, Math.min(46, Math.min(p.w, p.h) * 0.16));
+      const cx = p.x + p.w / 2;
+      const cy = p.y + p.h / 2;
+      const edgeStroke = sw * 2.6;
+      const edgeLines = [];
+
+      // Jeśli formatka nieobrócona: top/bottom/left/right odpowiadają bokom formatki
+      // Jeśli obrócona o 90° (p.rot): zamieniamy boki
+      const eTop = p.rot ? p.edges.left : p.edges.top;
+      const eBottom = p.rot ? p.edges.right : p.edges.bottom;
+      const eLeft = p.rot ? p.edges.bottom : p.edges.left;
+      const eRight = p.rot ? p.edges.top : p.edges.right;
+
+      if(eTop) edgeLines.push(`<line x1="${p.x}" y1="${p.y}" x2="${p.x + p.w}" y2="${p.y}" stroke="#fbbf24" stroke-width="${edgeStroke}"/>`);
+      if(eBottom) edgeLines.push(`<line x1="${p.x}" y1="${p.y + p.h}" x2="${p.x + p.w}" y2="${p.y + p.h}" stroke="#fbbf24" stroke-width="${edgeStroke}"/>`);
+      if(eLeft) edgeLines.push(`<line x1="${p.x}" y1="${p.y}" x2="${p.x}" y2="${p.y + p.h}" stroke="#fbbf24" stroke-width="${edgeStroke}"/>`);
+      if(eRight) edgeLines.push(`<line x1="${p.x + p.w}" y1="${p.y}" x2="${p.x + p.w}" y2="${p.y + p.h}" stroke="#fbbf24" stroke-width="${edgeStroke}"/>`);
+
+      return `
+        <g>
+          <rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="rgba(37,137,232,.26)" stroke="#38bdf8" stroke-width="${sw}"/>
+          ${edgeLines.join("")}
+          <text x="${cx}" y="${cy - fs*0.2}" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-family="monospace" font-weight="800" font-size="${fs}">${p.origW}×${p.origH}</text>
+          <text x="${cx}" y="${cy + fs*0.95}" text-anchor="middle" dominant-baseline="middle" fill="#bae6fd" font-family="sans-serif" font-size="${fs*0.64}">#${n+1} ${esc(p.label)}${p.rot ? " [90°]" : ""}</text>
+        </g>
+      `;
+    }).join("");
+
+    const steps = [];
+    if(cfg.l || cfg.r || cfg.t || cfg.b){
+      steps.push(`Odcięcie krawędzi kreskowanych: L=${cfg.l}mm, P=${cfg.r}mm, G=${cfg.t}mm, D=${cfg.b}mm → pole ${cfg.uw}×${cfg.uh}mm`);
+    }
+    sh.shelves.forEach((s, si) => {
+      const row = sh.placements.filter(p => Math.abs(p.y - s.y) < 0.01);
+      steps.push(`Pas ${si+1} (wys. ${s.h}mm, rzaz ${cfg.kerf}mm): ${row.map(r => `${r.origW}×${r.origH}`).join(" | ")}`);
+    });
+
+    return `
+      <div class="sheet-card">
+        <div class="sheet-hdr">
+          <span class="sheet-title">Płyta #${idx + 1} (${cfg.sw}×${cfg.sh} mm)</span>
+          <span class="sheet-stats">Formatki: ${sh.placements.length} · Rzaz: ${cfg.kerf} mm</span>
+        </div>
+        <div class="svg-wrap">
+          <svg viewBox="${-pad} ${-pad} ${vbW} ${vbH}" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="${cfg.sw}" height="${cfg.sh}" fill="#101522" stroke="#2589e8" stroke-width="${sw*1.2}"/>
+            ${trimDashed.join("")}
+            ${wasteDashed.join("")}
+            ${piecesSvg}
+            <text x="${cfg.sw/2}" y="-22" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="34">${cfg.sw} mm (słoje →)</text>
+            <text x="-22" y="${cfg.sh/2}" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="34" transform="rotate(-90 -22 ${cfg.sh/2})">${cfg.sh} mm</text>
+          </svg>
+        </div>
+        <div class="legend">
+          <span><i style="background:#38bdf8"></i>Formatka do wycięcia</span>
+          <span><i style="background:#fbbf24"></i>Bok oklejany</span>
+          <span><i style="background:rgba(239,68,68,.35);border:1px dashed #f87171"></i>Odjęcie krawędzi</span>
+          <span><i style="background:rgba(148,163,184,.2);border:1px dashed #94a3b8"></i>Odpad kreskowany</span>
+        </div>
+        <details class="cut-steps" open>
+          <summary>Kroki cięcia na płycie</summary>
+          <ol>${steps.map(st => `<li>${esc(st)}</li>`).join("")}</ol>
+        </details>
+      </div>
+    `;
+  }
+
+  // TRYB 2: RÓWNE CIĘCIA (np. 3000 mm na 5 części -> 4 cięcia z rzazem)
+  function calcEqual(){
+    const total = Math.max(0, +$("eqTotalLen").value || 0);
+    const n = Math.max(1, Math.min(500, Math.floor(+$("eqParts").value || 1)));
+    const kerf = Math.max(0, +$("eqKerf").value || 0);
+    const trim = Math.max(0, +$("eqTrim").value || 0);
+    const extra = $("eqExtraCut").checked ? 1 : 0;
+
+    const cuts = Math.max(0, n - 1);
+    const kerfLoss = (cuts + extra) * kerf;
+    const net = total - trim - kerfLoss;
+    const pieceLen = net / n;
+
+    $("eqCutsHint").textContent = `Liczba cięć przelotowych: ${cuts}`;
+
+    const out = $("eqResult");
+    if(total <= 0){
+      out.innerHTML = `<div class="empty">Podaj długość materiału.</div>`;
+      return;
+    }
+    if(net <= 0){
+      out.innerHTML = `<div class="alert alert-warn">Za mało materiału po odjęciu wyrównania (${trim} mm) i rzazów (${kerfLoss.toFixed(1)} mm).</div>`;
+      return;
+    }
+
+    const marks = [];
+    let pos = trim;
+    for(let i = 0; i < cuts; i++){
+      pos += pieceLen;
+      marks.push({ idx: i + 1, at: pos });
+      pos += kerf;
+    }
+
+    const barSegs = [];
+    if(trim > 0) barSegs.push(`<div class="seg-rem" style="width:${(trim/total)*100}%">odpad</div>`);
+    for(let i = 0; i < n; i++){
+      barSegs.push(`<div class="seg-piece" style="width:${(pieceLen/total)*100}%">${pieceLen.toFixed(1)}</div>`);
+      if(i < cuts) barSegs.push(`<div class="seg-kerf" style="width:${Math.max(2,(kerf/total)*100)}%"></div>`);
+    }
+    if(extra && kerf > 0) barSegs.push(`<div class="seg-kerf" style="width:${Math.max(2,(kerf/total)*100)}%"></div>`);
+
+    out.innerHTML = `
+      <div class="eq-box">
+        <div style="font-size:.75rem;color:var(--muted);font-family:var(--mono);text-transform:uppercase;font-weight:700">Długość 1 równego kawałka</div>
+        <div class="eq-big">${pieceLen.toFixed(2)} mm <span style="font-size:1rem;color:var(--muted)">(${(pieceLen/10).toFixed(2)} cm)</span></div>
+
+        <div class="eq-grid">
+          <div class="eq-cell"><small>Części</small><strong>${n} szt.</strong></div>
+          <div class="eq-cell"><small>Cięcia</small><strong>${cuts} cięć</strong></div>
+          <div class="eq-cell"><small>Strata rzazu (${kerf} mm)</small><strong>${kerfLoss.toFixed(1)} mm</strong></div>
+          <div class="eq-cell"><small>Zostaje z ${total} mm</small><strong>${(n * pieceLen).toFixed(1)} mm</strong></div>
+        </div>
+
+        <div class="bar-vis">
+          <div style="font-size:.74rem;color:var(--muted);font-family:var(--mono);margin-bottom:.4rem">Podział ${total} mm (czerwone = rzaz piły, kreskowane = odpad)</div>
+          <div class="bar-track">${barSegs.join("")}</div>
+        </div>
+
+        ${marks.length ? `
+          <div style="margin-top:.85rem">
+            <label>Punkty cięcia od początku (0 mm)</label>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.4rem;font-family:var(--mono);font-size:.82rem">
+              ${marks.map(m => `<div class="part-item"><span>Cięcie #${m.idx}:</span><strong>${m.at.toFixed(1)} mm</strong></div>`).join("")}
+            </div>
+          </div>` : ""}
+      </div>
+    `;
+  }
+
+  ["eqTotalLen","eqParts","eqKerf","eqTrim","eqExtraCut"].forEach(id => {
+    $(id).addEventListener("input", calcEqual);
+    $(id).addEventListener("change", calcEqual);
+  });
+
+  updateUsable();
+  updateLiveEdge();
+  renderPartsList();
+  runRozkroj();
+  calcEqual();
+})();
+</script>
+</body>
+</html>
