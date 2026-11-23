@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c0e14">
+  <title>LEBERCUT — rozkrój, okleina i równe cięcia</title>
+  <link rel="stylesheet" href="../assets/lebercut.css">
+  <script defer src="../assets/lebercut.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div>
+        <div class="brand">
+          <h1>LEBERCUT <span class="tag">Stolarnia · Kobalt</span></h1>
+        </div>
+        <p class="subtitle">Rozkrój płyt z odjęciem krawędzi, kierunkiem słojów, okleiną i cięciem na równe części.</p>
+      </div>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab-btn active" data-mode="cut">Rozkrój płyt</button>
+        <button type="button" class="tab-btn" data-mode="equal">Równe cięcia</button>
+      </div>
+    </header>
+
+    <main id="mode-cut" class="layout">
+      <div>
+        <section class="card">
+          <div class="card-head"><h2>1. Płyta i piła</h2></div>
+          <div class="section">
+            <label for="presetMat">Materiał</label>
+            <select id="presetMat">
+              <option value="meblowa">Płyta meblowa (2800 × 2070 mm, odjęcie 20 mm)</option>
+              <option value="osb">Płyta OSB (2500 × 1250 mm, bez odjęcia)</option>
+              <option value="custom">Własne wymiary</option>
+            </select>
+
+            <div class="grid-2" style="margin-top:0.65rem">
+              <div><label for="sw">Szerokość płyty (mm)</label><input type="number" id="sw" value="2800" min="10" step="1"></div>
+              <div><label for="sh">Wysokość / dł. (mm)</label><input type="number" id="sh" value="2070" min="10" step="1"></div>
+            </div>
+          </div>
+
+          <div class="section">
+            <label>Odjęcie krawędzi (mm na stronę — zawsze liczone)</label>
+            <div class="grid-4">
+              <div><label for="tL">Lewa</label><input type="number" id="tL" value="20" min="0" step="1"></div>
+              <div><label for="tR">Prawa</label><input type="number" id="tR" value="20" min="0" step="1"></div>
+              <div><label for="tT">Góra</label><input type="number" id="tT" value="20" min="0" step="1"></div>
+              <div><label for="tB">Dół</label><input type="number" id="tB" value="20" min="0" step="1"></div>
+            </div>
+            <div class="part-meta" id="usableInfo">Pole robocze: 2760 × 2030 mm</div>
+          </div>
+
+          <div class="section">
+            <div class="grid-2">
+              <div>
+                <label for="grain">Słoje (1. wym. = poziom)</label>
+                <select id="grain">
+                  <option value="h">Poziomo</option>
+                  <option value="v">Pionowo</option>
+                  <option value="none">Wcale (obrót 90°)</option>
+                </select>
+              </div>
+              <div>
+                <label for="kerf">Rzaz piły (mm)</label>
+                <input type="number" id="kerf" value="3.2" min="0" step="0.1">
+              </div>
+            </div>
+            <div style="margin-top:0.65rem">
+              <label for="pricePerPart">Cena za formatkę (1 form. = 1 cięcie, zł)</label>
+              <input type="number" id="pricePerPart" value="5" min="0" step="0.5">
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>2. Formatki i okleina</h2></div>
+          <div class="grid-3">
+            <div><label for="pW">1. wym. (mm)</label><input type="number" id="pW" value="800" min="1" step="1"></div>
+            <div><label for="pH">2. wym. (mm)</label><input type="number" id="pH" value="400" min="1" step="1"></div>
+            <div><label for="pQty">Ilość (szt.)</label><input type="number" id="pQty" value="4" min="1" step="1"></div>
+          </div>
+          <div style="margin-top:0.55rem">
+            <label for="pLabel">Opis (opcjonalnie)</label>
+            <input type="text" id="pLabel" placeholder="np. front, półka">
+          </div>
+
+          <div class="edges-box">
+            <label style="margin:0">Oklejane boki</label>
+            <div class="edges-grid">
+              <label class="chk"><input type="checkbox" id="eTop"> Góra (1. wym.)</label>
+              <label class="chk"><input type="checkbox" id="eBot"> Dół (1. wym.)</label>
+              <label class="chk"><input type="checkbox" id="eLeft"> Lewo (2. wym.)</label>
+              <label class="chk"><input type="checkbox" id="eRight"> Prawo (2. wym.)</label>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button type="button" class="btn btn-cobalt" id="addPartBtn">+ Dodaj</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="sampleBtn">Przykład</button>
+            <button type="button" class="btn btn-danger btn-sm" id="clearBtn">Wyczyść</button>
+          </div>
+
+          <div class="parts-list" id="partsList"></div>
+        </section>
+      </div>
+
+      <section class="card">
+        <div class="print-meta" id="printMeta"></div>
+        <div class="card-head">
+          <h2>Plan cięcia i zestawienie</h2>
+          <div style="display:flex;gap:0.45rem;align-items:center">
+            <select id="printMode" style="height:2.1rem;font-size:0.78rem;width:auto">
+              <option value="all">Druk: płyty + tabela</option>
+              <option value="table">Druk: sama tabela</option>
+            </select>
+            <button type="button" class="btn btn-cobalt btn-sm" id="printBtn">Drukuj</button>
+          </div>
+        </div>
+
+        <div id="alerts"></div>
+        <div class="kpis" id="kpis"></div>
+        <div id="sheetsOut"></div>
+        <div class="tbl-wrap" id="summaryTable"></div>
+      </section>
+    </main>
+
+    <main id="mode-equal" class="layout" hidden>
+      <section class="card">
+        <div class="card-head"><h2>Cięcie na równe części</h2></div>
+        <div class="grid-2">
+          <div><label for="eqLen">Długość (mm)</label><input type="number" id="eqLen" value="3000" min="1" step="1"></div>
+          <div><label for="eqN">Liczba części</label><input type="number" id="eqN" value="5" min="1" step="1"></div>
+        </div>
+        <div class="grid-2" style="margin-top:0.65rem">
+          <div><label for="eqKerf">Rzaz piły (mm)</label><input type="number" id="eqKerf" value="3.2" min="0" step="0.1"></div>
+          <div><label for="eqTrim">Odcięcie końców (mm)</label><input type="number" id="eqTrim" value="0" min="0" step="1"></div>
+        </div>
+        <div class="part-meta" id="eqCutsHint" style="margin-top:0.5rem">Liczba cięć przelotowych: 4</div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Wynik podziału</h2></div>
+        <div id="eqResult"></div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
