@@ -24,7 +24,36 @@ summary:hover{color:var(--red)}
 .colors{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;margin-top:.75rem}
 .colors .field{margin-bottom:.4rem}
 input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(--edge);border-radius:14px;background:var(--field);cursor:pointer;display:block}
+
+/* ===== druk ===== */
+.print{margin:1.5rem 0}
+.print h2{margin:0 0 .25rem}
+.print .hint{margin:0 0 1rem;opacity:.7}
+.pgrid{display:grid;gap:1.25rem;grid-template-columns:1fr}
+@media(min-width:60rem){.pgrid{grid-template-columns:19rem 1fr;align-items:start}}
+.pf{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:.75rem 1rem}
+.pf>div{min-width:0}
+.pf input[type=number],.pf select{width:100%;box-sizing:border-box;height:3rem;padding:0 .75rem;border:1px solid var(--edge);border-radius:14px;background:var(--field);color:var(--ink);font:inherit}
+.pf .chk{display:flex;align-items:center;gap:.5rem;cursor:pointer;grid-column:1/-1}
+.pf .chk input{width:1.1rem;height:1.1rem;accent-color:var(--red)}
+.pf .span{grid-column:1/-1}
+.pf .row{margin:0;display:flex;flex-wrap:wrap;gap:.5rem}
+.p-ed{touch-action:none;user-select:none;-webkit-user-select:none;border:1px solid var(--edge);border-radius:18px;background:var(--field);padding:.5rem;outline:none}
+.p-ed:focus-visible{box-shadow:0 0 0 2px var(--red)}
+.p-ed svg{display:block;width:100%;height:auto;max-height:28rem}
+.p-ed [data-code]{cursor:grab}
+.p-ed.drag [data-code]{cursor:grabbing}
+.p-sub{font-weight:700;margin:1.25rem 0 .5rem}
+.p-prev{max-width:26rem}
+.p-prev svg{display:block;width:100%;height:auto;box-shadow:0 8px 24px var(--sh);border-radius:2px}
+#printSheet{display:none}
+@media print{
+  body>*:not(#printSheet){display:none!important}
+  #printSheet{display:block;overflow:hidden}
+  html,body{background:#fff!important;margin:0!important;padding:0!important}
+}
 </style>
+<style id="pageStyle"></style>
 </head>
 <body>
 <div class="wrap">
@@ -58,9 +87,43 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
 </details>
 </section>
 </div>
+
+<section class="print glass" id="print">
+<h2>Druk</h2>
+<p class="hint">Ustaw wymiary plakietki, przeciągnij kod w wybrane miejsce i wydrukuj na A4 z obrysem do wycinania.</p>
+<div class="pgrid">
+<div class="pf">
+<div><label class="field" for="p_bw">Plakietka: szerokość (cm)</label><input type="number" id="p_bw" value="8" min="0.5" max="29" step="0.1" inputmode="decimal"></div>
+<div><label class="field" for="p_bh">Plakietka: wysokość (cm)</label><input type="number" id="p_bh" value="5" min="0.5" max="29" step="0.1" inputmode="decimal"></div>
+<div><label class="field" for="p_cw">Kod: szerokość (cm)</label><input type="number" id="p_cw" value="3" min="0.3" max="29" step="0.1" inputmode="decimal"></div>
+<div><label class="field" for="p_grid">Siatka</label>
+<select id="p_grid"><option value="0">Wyłączona</option><option value="1">1 mm</option><option value="2.5">2,5 mm</option><option value="5" selected>5 mm</option><option value="10">10 mm</option></select></div>
+<label class="chk"><input type="checkbox" id="p_snap" checked> Przyciągaj do siatki</label>
+<div class="span"><p class="field">Pozycja kodu</p>
+<div class="row">
+<button class="btn ghost small" type="button" id="p_c">Wyśrodkuj</button>
+<button class="btn ghost small" type="button" id="p_ch">Poziomo</button>
+<button class="btn ghost small" type="button" id="p_cv">Pionowo</button>
+</div></div>
+<div><label class="field" for="p_o">Arkusz A4</label>
+<select id="p_o"><option value="p">Pionowo</option><option value="l">Poziomo</option></select></div>
+<div><label class="field" for="p_m">Margines (mm)</label><input type="number" id="p_m" value="10" min="0" max="50" step="1" inputmode="decimal"></div>
+<label class="chk"><input type="checkbox" id="p_tile"> Powielaj plakietki na całym arkuszu</label>
+<label class="chk"><input type="checkbox" id="p_cut" checked> Obrys do wycinania</label>
+<p class="status span" id="p_msg" aria-live="polite"></p>
+<div class="span"><button class="btn" type="button" id="p_print" disabled>Drukuj / zapisz PDF</button></div>
+</div>
+<div>
+<div class="p-ed" id="p_ed" tabindex="0" aria-label="Edytor plakietki. Przeciągnij kod lub użyj strzałek."></div>
+<p class="p-sub">Podgląd arkusza A4</p>
+<div class="p-prev" id="p_prev"></div>
+</div>
+</div>
+</section>
 </main>
 </div>
 <footer class="wrap">Kod powstaje lokalnie w przeglądarce. Nic nie jest wysyłane.</footer>
+<div id="printSheet" aria-hidden="true"></div>
 <script src="../qrcode.js"></script>
 <script>
 (function(){
@@ -150,7 +213,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
   }
 
   function empty(msg){box.classList.remove("scan"); box.classList.add("empty"); box.textContent=msg;}
-  function render(){
+  function render0(){
     const info=compose(); cur=null; png.disabled=svgB.disabled=true; status.textContent="";
     if(info.kind==="empty"){empty("Kod pojawi się tutaj."); animate=true; return;}
     try{cur=makeSvg(fmt,info.text);}catch(e){empty("Nie da się utworzyć kodu."); status.textContent=e.pl||"Za dużo tekstu albo znaki niedozwolone w tym formacie."; return;}
@@ -158,6 +221,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
     if(animate){box.classList.remove("scan"); void box.offsetWidth; box.classList.add("scan"); animate=false;}
     status.textContent=info.kind==="linkAdded"?"Wykryto link, dodano https://: "+info.text:warn()||(info.kind==="link"?"Wykryto link.":"");
   }
+  function render(){render0(); P.update();}
   box.addEventListener("animationend",e=>{if(e.target===box) box.classList.remove("scan");});
 
   /* eksport */
@@ -175,6 +239,141 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:1px solid var(-
     img.onload=()=>{const cv=document.createElement("canvas"); cv.width=W; cv.height=H; cv.getContext("2d").drawImage(img,0,0,W,H); URL.revokeObjectURL(url); cv.toBlob(b=>save(b,"kod.png"),"image/png");};
     img.src=url;
   };
+
+  /* ===== druk: plakietka na A4 ===== */
+  const P=(()=>{
+    const el={};
+    ["bw","bh","cw","grid","snap","o","m","tile","cut","ed","prev","msg","print","c","ch","cv"].forEach(k=>el[k]=$("p_"+k));
+    const sheet=$("printSheet"), pageStyle=$("pageStyle");
+    const S={x:0,y:0,centered:true,gx:false,gy:false}; /* mm, lewy górny róg kodu w plakietce */
+    const mm=v=>Math.round(v*100)/100;
+    const cm=v=>String(mm(v/10)).replace(".",",");
+    const num=(e,d,min)=>{const v=parseFloat(String(e.value).replace(",","."));return v>=(min||0.001)?v:d;};
+
+    function geom(){
+      const bw=num(el.bw,8)*10, bh=num(el.bh,5)*10, cw=num(el.cw,3)*10;
+      const [dw,dh]=cur?dims(cur):[1,1];
+      const m=Math.max(0,parseFloat(el.m.value)||0), land=el.o.value==="l";
+      const PW=land?297:210, PH=land?210:297;
+      return {bw,bh,cw,ch:cw*dh/dw,m,land,PW,PH,g:parseFloat(el.grid.value)||0};
+    }
+    function clamp(G){
+      const lx=Math.min(0,G.bw-G.cw), hx=Math.max(0,G.bw-G.cw), ly=Math.min(0,G.bh-G.ch), hy=Math.max(0,G.bh-G.ch);
+      S.x=Math.min(hx,Math.max(lx,S.x)); S.y=Math.min(hy,Math.max(ly,S.y));
+    }
+    function place(G){
+      if(S.centered){S.x=(G.bw-G.cw)/2; S.y=(G.bh-G.ch)/2;}
+      clamp(G);
+      S.gx=Math.abs(S.x+G.cw/2-G.bw/2)<.01; S.gy=Math.abs(S.y+G.ch/2-G.bh/2)<.01;
+    }
+    function codeSvg(G,x,y,extra){
+      if(!cur) return "";
+      const i0=cur.indexOf("<svg"), i1=cur.indexOf(">",i0)+1, i2=cur.lastIndexOf("</svg>");
+      const vb=(/viewBox=["']([^"']+)["']/.exec(cur.slice(i0,i1))||[0,"0 0 300 300"])[1];
+      return `<svg x="${mm(x)}" y="${mm(y)}" width="${mm(G.cw)}" height="${mm(G.ch)}" viewBox="${vb}" preserveAspectRatio="none"${extra||""}>${cur.slice(i1,i2)}</svg>`;
+    }
+
+    /* edytor plakietki */
+    function edit(G){
+      const pad=5, parts=[];
+      if(G.g>=1&&G.g<=10){
+        let d=""; for(let x=G.g;x<G.bw-.001;x+=G.g) d+=`M${mm(x)} 0V${G.bh}`; for(let y=G.g;y<G.bh-.001;y+=G.g) d+=`M0 ${mm(y)}H${G.bw}`;
+        parts.push(`<path d="${d}" stroke="#8886" stroke-width=".12" fill="none"/>`);
+      }
+      const cx=G.bw/2, cy=G.bh/2;
+      parts.push(`<path d="M${cx} 0V${G.bh}" stroke="${S.gx?"#F5322C":"#8888"}" stroke-width="${S.gx?.35:.15}" stroke-dasharray="1.5 1.5" fill="none"/>`);
+      parts.push(`<path d="M0 ${cy}H${G.bw}" stroke="${S.gy?"#F5322C":"#8888"}" stroke-width="${S.gy?.35:.15}" stroke-dasharray="1.5 1.5" fill="none"/>`);
+      if(cur){
+        parts.push(`<g data-code="1">${codeSvg(G,S.x,S.y,' shape-rendering="crispEdges"')}</g>`);
+        parts.push(`<rect x="${mm(S.x)}" y="${mm(S.y)}" width="${mm(G.cw)}" height="${mm(G.ch)}" fill="none" stroke="#F5322C" stroke-width=".25" stroke-dasharray="1 1" pointer-events="none"/>`);
+      } else {
+        parts.push(`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="3" fill="#888">Najpierw wpisz tekst powyżej</text>`);
+      }
+      el.ed.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad} ${mm(G.bw+pad*2)} ${mm(G.bh+pad*2)}">
+<rect width="${mm(G.bw)}" height="${mm(G.bh)}" fill="#fff" stroke="#191919" stroke-width=".35"/>${parts.join("")}
+<text x="${mm(G.bw/2)}" y="${mm(G.bh+3.6)}" text-anchor="middle" font-size="2.8" fill="#888">${cm(G.bw)} × ${cm(G.bh)} cm</text></svg>`;
+    }
+
+    /* arkusz A4 */
+    function layout(G){
+      const aw=G.PW-2*G.m, ah=G.PH-2*G.m, fits=G.bw<=aw+.001&&G.bh<=ah+.001;
+      let cols=1, rows=1;
+      if(el.tile.checked&&fits){cols=Math.max(1,Math.floor((aw+.001)/G.bw)); rows=Math.max(1,Math.floor((ah+.001)/G.bh));}
+      return {fits,cols,rows};
+    }
+    function sheetSvg(G,Lt,printMode){
+      const tiles=[];
+      for(let r=0;r<Lt.rows;r++) for(let c=0;c<Lt.cols;c++){
+        const ox=mm(G.m+c*G.bw), oy=mm(G.m+r*G.bh);
+        tiles.push(`<g transform="translate(${ox} ${oy})">${codeSvg(G,S.x,S.y)}</g>`);
+      }
+      let cut="";
+      if(el.cut.checked){
+        let d=""; for(let c=0;c<=Lt.cols;c++) d+=`M${mm(G.m+c*G.bw)} ${G.m}V${mm(G.m+Lt.rows*G.bh)}`;
+        for(let r=0;r<=Lt.rows;r++) d+=`M${G.m} ${mm(G.m+r*G.bh)}H${mm(G.m+Lt.cols*G.bw)}`;
+        cut=`<path d="${d}" stroke="#000" stroke-width=".25" fill="none"/>`;
+      }
+      const size=printMode?` width="${G.PW}mm" height="${G.PH}mm" style="display:block"`:"";
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${G.PW} ${G.PH}"${size}><rect width="${G.PW}" height="${G.PH}" fill="#fff"/>${tiles.join("")}${cut}</svg>`;
+    }
+
+    function update(){
+      const G=geom(); place(G); edit(G);
+      const Lt=layout(G);
+      el.prev.innerHTML=sheetSvg(G,Lt,false);
+      el.print.disabled=!cur;
+      el.msg.textContent=!Lt.fits?"Plakietka nie mieści się na A4 po odjęciu marginesów.":el.tile.checked?`Na arkuszu: ${Lt.cols*Lt.rows} szt. (${Lt.cols} × ${Lt.rows}).`:"";
+    }
+
+    /* przeciąganie, magnes na środek, siatka, strzałki */
+    const THR=1.5;
+    function snapPos(G,x,y,fine){
+      if(el.snap.checked&&G.g>0&&!fine){x=Math.round(x/G.g)*G.g; y=Math.round(y/G.g)*G.g;}
+      if(Math.abs(x+G.cw/2-G.bw/2)<THR) x=(G.bw-G.cw)/2;
+      if(Math.abs(y+G.ch/2-G.bh/2)<THR) y=(G.bh-G.ch)/2;
+      return [x,y];
+    }
+    let drag=null;
+    function toMm(e){
+      const s=el.ed.querySelector("svg"); if(!s) return null;
+      const pt=s.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+      const m=s.getScreenCTM(); return m?pt.matrixTransform(m.inverse()):null;
+    }
+    el.ed.addEventListener("pointerdown",e=>{
+      if(!cur||!e.target.closest("[data-code]")) return;
+      const p=toMm(e); if(!p) return;
+      drag={dx:p.x-S.x,dy:p.y-S.y}; el.ed.classList.add("drag"); el.ed.setPointerCapture(e.pointerId); el.ed.focus({preventScroll:true}); e.preventDefault();
+    });
+    el.ed.addEventListener("pointermove",e=>{
+      if(!drag) return;
+      const p=toMm(e); if(!p) return;
+      const G=geom(); [S.x,S.y]=snapPos(G,p.x-drag.dx,p.y-drag.dy,e.altKey);
+      S.centered=false; clamp(G); update();
+    });
+    const end=()=>{drag=null; el.ed.classList.remove("drag");};
+    el.ed.addEventListener("pointerup",end); el.ed.addEventListener("pointercancel",end);
+    el.ed.addEventListener("keydown",e=>{
+      const k={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key]; if(!k||!cur) return;
+      const G=geom(), st=e.shiftKey?5:(G.g>0&&el.snap.checked?G.g:.5);
+      S.centered=false; S.x=Math.round((S.x+k[0]*st)/(st>=1?st:.5))*(st>=1?st:.5); S.y=Math.round((S.y+k[1]*st)/(st>=1?st:.5))*(st>=1?st:.5);
+      clamp(G); update(); e.preventDefault();
+    });
+
+    el.c.onclick=()=>{S.centered=true; update();};
+    el.ch.onclick=()=>{const G=geom(); S.centered=false; S.x=(G.bw-G.cw)/2; update();};
+    el.cv.onclick=()=>{const G=geom(); S.centered=false; S.y=(G.bh-G.ch)/2; update();};
+    ["bw","bh","cw","grid","snap","o","m","tile","cut"].forEach(k=>{el[k].addEventListener("input",update); el[k].addEventListener("change",update);});
+
+    el.print.onclick=()=>{
+      if(!cur) return;
+      const G=geom(), Lt=layout(G);
+      pageStyle.textContent=`@page{size:A4 ${G.land?"landscape":"portrait"};margin:0}`;
+      sheet.style.height=(G.PH-1)+"mm"; sheet.style.width=G.PW+"mm";
+      sheet.innerHTML=sheetSvg(G,Lt,true);
+      window.print();
+    };
+    return {update};
+  })();
 
   /* przyciski formatów z miniaturami */
   function thumb(f){ov={i:INK0,p:"#FFFFFF"}; let s=""; try{s=makeSvg(f,SAMPLE[f]);}catch(e){} ov=null; return s;}
