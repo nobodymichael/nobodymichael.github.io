@@ -24,7 +24,6 @@ summary:hover{color:var(--red)}
 .colors .field{margin-bottom:.4rem}
 input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:2px solid var(--edge);border-radius:14px;background:var(--field);cursor:pointer;display:block}
 
-/* ===== druk ===== */
 .print{margin:1.5rem 0}
 .print h2{margin:0 0 .25rem;font-weight:900}
 .print .hint{margin:0 0 1rem;opacity:.75}
@@ -137,7 +136,7 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:2px solid var(-
 
   function rule(){
     if(fmt==="ean13") return {bad:/\D/g,max:13,mode:"numeric",ph:"12 lub 13 cyfr"};
-    if(fmt==="code39") return {bad:/[^A-Z0-9 \-.$\/+%]/g,up:1,ph:"A-Z, 0-9 i - . $ / + %"};
+    if(fmt==="code39") return {bad:/[^A-Z0-9 \-.$/+%]/g,up:1,ph:"A-Z, 0-9 i - . $ / + %"};
     if(fmt==="code128") return {bad:/[^\x20-\x7e]/g};
     return null;
   }
@@ -255,7 +254,6 @@ input[type=color]{width:3.4rem;height:3rem;padding:.15rem;border:2px solid var(-
     img.src=url;
   };
 
-  /* ===== druk: plakietka na A4 ===== */
   const P=(()=>{
     const el={};
     ["bw","bh","cw","grid","snap","o","m","n","cut","ed","prev","msg","print","c","ch","cv"].forEach(k=>el[k]=$("p_"+k));
