@@ -1,0 +1,54 @@
+name: PULSE — reports and Pages
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore: ['data/pulse/**']
+  schedule:
+    - cron: '0 7,12,17,21 * * *'
+      timezone: 'Europe/Warsaw'
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: nobody-pages
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate report
+        if: github.event_name != 'push'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+        run: python3 scripts/pulse.py
+      - name: Archive report
+        if: github.event_name != 'push'
+        run: |
+          git config user.name 'NOBODY PULSE'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/pulse
+          if ! git diff --cached --quiet; then
+            git commit -m 'PULSE: update daily report'
+            git push
+          fi
+      - uses: actions/configure-pages@v5
+      - name: Prepare static website
+        run: |
+          mkdir -p /tmp/nobody-site
+          cp -r index.html assets tools /tmp/nobody-site/
+          if [ -d data/pulse ]; then
+            mkdir -p /tmp/nobody-site/data/pulse
+            cp data/pulse/????-??-??.json data/pulse/index.json /tmp/nobody-site/data/pulse/
+          fi
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/nobody-site
+      - uses: actions/deploy-pages@v4
+        id: deployment
