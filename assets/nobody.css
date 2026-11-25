@@ -5,3 +5,5 @@
 /* Keep artwork clear of the copy on narrow screens. */
 .card-arrow .ui-icon{width:20px;height:20px}.terminal-pulse{animation:terminal-flash .7s ease!important}@keyframes terminal-flash{0%,100%{box-shadow:0 25px 110px #000a}35%{box-shadow:0 0 70px #49ff4860,inset 0 0 35px #49ff4822}}@media(max-width:700px){.tool-card .tool-art{width:clamp(76px,25vw,120px);top:42px;right:20px;opacity:.82}.card-copy{position:relative;z-index:2}.tool-card .card-copy p{max-width:100%;position:relative}.tool-card .card-copy h3{font-size:clamp(35px,10vw,45px)}.tool-card{min-height:220px}.card-arrow{position:relative;z-index:3}.hero .art{opacity:.29}.nav .button{box-shadow:none}}@media(prefers-reduced-motion:reduce){.terminal-pulse{animation:none!important}}
 @media(max-width:700px){.tool-card .tool-art{width:clamp(64px,22vw,88px);top:47px;right:22px}.tool-card .card-copy p{max-width:100%}.tool-card .card-copy h3{padding-right:72px}}
+
+.pulse-card{grid-column:1/-1}.pulse-card .tool-art{right:8%}@media(max-width:650px){.pulse-card .tool-art{right:5%}}

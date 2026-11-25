@@ -30,6 +30,12 @@ An image metadata inspector and local privacy toolkit.
 
 [Open EXIF](https://nobodymichael.github.io/tools/exif.html)
 
+## 03 / INTELLIGENCE — PULSE
+
+A Polish-language crypto market briefing generated from public news feeds using Gemini, with source links, archived daily reports and market snapshots. PULSE uses external data and server-side scheduled generation; it does not send visitor data to Gemini. AI summaries can be incomplete or inaccurate.
+
+[Open PULSE](https://nobodymichael.github.io/tools/pulse.html)
+
 ## Privacy by design
 
 Images and code content are processed in the browser. No accounts, analytics or server-side file processing. Metadata inspection is format-dependent and cannot remove private information visible in image pixels. Always review the result before sharing.
