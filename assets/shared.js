@@ -1,0 +1,2 @@
+'use strict';
+(()=>{const b=document.querySelector('.back-top');if(!b)return;const update=()=>{b.classList.toggle('at-top',(document.scrollingElement?.scrollTop||window.scrollY||0)<16)};window.addEventListener('scroll',update,{passive:true});window.addEventListener('pageshow',update);update();b.addEventListener('click',()=>window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}));})();
