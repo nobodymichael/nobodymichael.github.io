@@ -19,3 +19,12 @@ Statyczna strona GitHub Pages. Bez npm, kompilacji, serwera aplikacji ani zewnę
 - Nie wykonano pełnych testów przeglądarkowych (lokalne strony zablokowane przez środowisko), fizycznego wydruku, Safari/iOS, wszystkich formatów kodów ani audytu bezpieczeństwa. Wdrożenie traktuj jako betę. Print Studio obsługuje jeden kod na wkładkę; kilka różnych kodów i własne napisy to kolejne rozszerzenie.
 - Adresy BTC, ETH, SOL i TRX skopiowane z poprzedniej wersji; sprawdź przed użyciem. XMR pominięto, stary adres był placeholderem `test`.
 - Biblioteki lokalne: silnik QR (QRCode for JavaScript, Kazuhiko Arase, MIT, adaptacja qrcode-terminal), JSZip (MIT/GPLv3, używana na zasadach MIT); licencje w `licenses/`. Biblioteka bwip-js pozostaje w repozytorium użytkownika.
+
+## Beta 2 — aktualizacja interfejsu narzędzi
+
+- Strona główna i jej skrypty pozostają bez zmian.
+- QRGEN: osiem przycisków wyboru formatu; ostatnia ręczna edycja jest zachowywana przy zmianie formatu. Ograniczenia EAN/Code 39/Code 128 nie zmieniają zapamiętanej treści, dopóki użytkownik nie edytuje pola.
+- Print Studio: pełny arkusz A4 bez wewnętrznego przewijania, nawigacja między arkuszami, podgląd pionowy i poziomy; style SVG stosowane tylko do głównego arkusza, nie do osadzonych kodów.
+- EXIF: przyciski Lossless / Deep Clean, odświeżone panele i podglądy.
+- Aktualizacja istniejącej bety: wystarczy nadpisać `assets/tools.css`, `assets/qrgen.js`, `assets/exif.js`, `tools/qr.html`, `tools/exif.html`. Zachować `assets/bwip-js-min.js`.
+- Sprawdzono w Chromium z kodem i CSS wczytanym bezpośrednio do dokumentu testowego (lokalna nawigacja jest zablokowana): logikę zmiany formatów, paginację i proporcje A4, szerokość mobilną 390 px, przełączanie trybów EXIF. Nie sprawdzano ponownie fizycznego wydruku, Safari ani kodowania Aztec bez lokalnej biblioteki BWIP.
