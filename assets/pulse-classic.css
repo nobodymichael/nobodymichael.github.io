@@ -25,3 +25,20 @@ html,body.pulse{background:#000;color:#f4f0e6;--mint:#59dea2;--muted:#b6b4aa;--e
 .ratio .meta{margin-top:0}.ratio p{color:#ccc8be;margin:3px 0}.rates,.snapshot{margin-top:16px}.rates .fx>div{border-color:var(--edge)}.quick-access a{border:1px solid var(--edge);padding:8px 14px}
 @media(max-width:650px){.pulse-hero{min-height:150px}.coin-art{right:-3%;width:48%}.market-grid{gap:8px}.market-grid .panel{min-height:190px;padding:13px 12px;border-radius:20px}.market-grid .section-title{font-size:10px}.market-grid .section-title a{font-size:10px}.market-grid h2{font-size:18px}.ratio .ratio-number{font-size:clamp(31px,9vw,52px)}.gauge{max-width:124px}.scale,.market-grid .meta{font-size:10px}.ratio p{font-size:12px}}
 .market-grid + .quote-grid{margin-top:24px}
+
+.pulse .cards {
+  gap: 10px;
+  padding: 0;
+  border: 0;
+}
+.pulse .cards .asset {
+  padding: clamp(12px, 1.6vw, 20px);
+  border: 1px solid color-mix(in srgb, var(--coin) 27%, #151513);
+  border-radius: 21px;
+  background: linear-gradient(124deg, color-mix(in srgb, var(--coin) 15%, #090909), #0b0b0a 76%);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--coin) 13%, transparent);
+}
+.pulse .top #refresh {
+  background: color-mix(in srgb, var(--mint) 11%, #070807);
+  border-color: color-mix(in srgb, var(--mint) 32%, #191a18);
+}

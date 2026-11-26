@@ -20,9 +20,17 @@ body[data-app=nobody] .carbon-networks button[aria-pressed=true]{background:var(
 .launch-grid{grid-template-columns:minmax(0,1fr);width:min(870px,calc(100% - 40px));gap:12px;padding:30px 0 42px}
 #tools-heading{font-size:clamp(28px,4vw,42px);letter-spacing:-.06em;line-height:1.1;margin:0 0 6px;color:var(--paper)}
 #tools-heading span{color:var(--accent)}
-.launch-grid .launch{--detail:#59dea2;min-height:112px;grid-template-columns:1fr minmax(90px,20%) 30px;gap:20px;align-content:center;padding:22px 28px;border-radius:32px;border-color:#31332f;background:linear-gradient(100deg,#0c0d0c,#030403)}
+.launch-grid .launch{min-height:112px;grid-template-columns:1fr minmax(90px,20%) 30px;gap:20px;align-content:center;padding:22px 28px;border-radius:32px;border-color:color-mix(in srgb,var(--detail) 28%,#141513);background:linear-gradient(110deg,#090909 8%,color-mix(in srgb,var(--detail) 9%,#080808) 62%,color-mix(in srgb,var(--detail) 18%,#080808))}
 .launch-grid .launch::after{content:"";width:22px;height:22px;justify-self:end;background:var(--detail);clip-path:polygon(22% 15%,85% 15%,85% 78%,73% 78%,73% 35%,20% 88%,12% 80%,65% 27%,22% 27%)}
 .launch-grid .launch:hover,.launch-grid .launch:focus-visible{border-color:var(--detail)}
 .launch-grid .tile-art{position:static;width:100%;max-width:130px;height:60px;justify-self:end;color:var(--detail)}
-.launch-grid .qrgen{--detail:#c7b5f5}.launch-grid .exif{--detail:#d5b177}.launch-grid .lebercut{--detail:#7899ff}
+.launch-grid .pulse{--detail:#59dea2}.launch-grid .qrgen{--detail:#c7b5f5}.launch-grid .exif{--detail:#d5b177}.launch-grid .lebercut{--detail:#7899ff}
 @media(max-width:600px){.launch-grid{width:calc(100% - 28px);padding-top:22px;gap:10px}.launch-grid .launch{grid-template-columns:minmax(0,1fr) 66px 14px;gap:9px;min-height:91px;border-radius:26px;padding:16px 17px}.launch-grid .tile-art{height:42px}.launch-grid .launch::after{width:14px;height:14px}.launch-grid .launch p{font-size:13px}.scene{margin-top:15px}}
+
+.sheet.market { background: linear-gradient(140deg,#193329,#090d0b 78%) }
+.sheet.code { background: #26212e }
+.sheet.photo { background: #312a20 }
+.sheet.code > svg { color: #c7b5f5 }
+.sheet.photo > svg { color: #d5b177 }
+body[data-app=nobody] .nav .button { background:#10241a;border-color:#30503f }
+body[data-app=nobody] .nav .button:hover { background:#193425 }
