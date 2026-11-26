@@ -42,3 +42,18 @@ html,body.pulse{background:#000;color:#f4f0e6;--mint:#59dea2;--muted:#b6b4aa;--e
   background: color-mix(in srgb, var(--mint) 11%, #070807);
   border-color: color-mix(in srgb, var(--mint) 32%, #191a18);
 }
+.pulse .sentiment { --light:#c3a3dc }
+.pulse .rates { --light:#83afd5 }
+.pulse .snapshot { --light:#72c6a0 }
+.pulse :is(.sentiment,.rates,.snapshot) {
+  background:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--light) 17%,transparent),transparent 74%),#0d0d0e;
+  border-color:color-mix(in srgb,var(--light) 29%,#181818);
+  box-shadow:inset 0 1px color-mix(in srgb,var(--light) 12%,transparent),0 4px 20px color-mix(in srgb,var(--light) 5%,transparent);
+}
+.sentiment-value {display:flex;align-items:baseline;gap:6px;margin-top:auto;padding-top:14px}
+.sentiment-value strong {font-size:clamp(38px,5.8vw,72px);line-height:1;letter-spacing:-.065em;font-variant-numeric:tabular-nums}
+.sentiment-value small {color:var(--muted)}
+.sentiment .fear-label {align-self:flex-start;margin:4px 0 12px;text-align:left}
+.sentiment-track {position:relative;height:7px;border-radius:8px;margin:1px 4px 7px;background:linear-gradient(90deg,#e68484,#dbaa70 27%,#d6ca94 50%,#94c3a5 72%,#60cba5)}
+.sentiment-track i {position:absolute;top:50%;width:6px;height:15px;border-radius:4px;background:#faf6eb;outline:2px solid #222;transform:translate(-50%,-50%)}
+.pulse .cards .asset {box-shadow:inset 0 1px color-mix(in srgb,var(--coin) 15%,transparent),0 4px 16px color-mix(in srgb,var(--coin) 6%,transparent)}
