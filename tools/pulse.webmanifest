@@ -1,0 +1,25 @@
+{
+  "id": "./pulse.html",
+  "name": "PULSE — Market Terminal",
+  "short_name": "PULSE",
+  "start_url": "./pulse.html",
+  "scope": "./pulse.html",
+  "display": "standalone",
+  "background_color": "#101310",
+  "theme_color": "#101510",
+  "lang": "pl",
+  "icons": [
+    {
+      "src": "../assets/pulse-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../assets/pulse-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
