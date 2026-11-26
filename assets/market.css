@@ -1,5 +1,12 @@
-:root{--accent:#43e69a;--line:#303b35;--bg:#101513;--muted:#a5b1aa;font-family:system-ui,-apple-system,sans-serif}
-body{background:var(--bg)}.ambient,.panel:before,.asset:before,.asset:after{display:none}
-main.shell{display:grid;grid-template-columns:100%;gap:18px;padding-bottom:24px}main.shell>*{order:initial;margin-block:0}.hero{padding:24px 0 0}.hero h1{letter-spacing:-.075em}.hero h1 span{animation:none}.panel,.cards{background:#19211d;border:1px solid var(--line);border-radius:14px;box-shadow:none;animation:none}.snapshot{display:block;min-height:0}.snapshot-text .eyebrow,.assets .section-title{color:#a4b2a9}.snapshot h2{font-size:clamp(18px,2.7vw,29px)}.asset .price,.ratio-number,.fx strong{font-variant-numeric:tabular-nums}.asset .price{letter-spacing:-.035em}.asset .meta{font-size:11px;color:var(--muted)}.assets .section-title{margin-bottom:9px}.rates h2{font-size:17px;margin:0 0 14px}.rates .fx{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:0;padding:0}.rates .fx>small{grid-column:1/-1}.rates .fx>div{min-width:0}.quick-access a{background:#1b251f}.hero small{font-size:12px}.panel:hover{border-color:var(--line);box-shadow:none}
-@media(max-width:600px){main.shell{gap:14px}.top{height:54px}.hero{padding-top:14px}.asset{padding:12px 0}.asset .price{font-size:21px}.asset .change{font-size:12px}.asset .meta{font-size:10px}.market-grid{grid-template-columns:1fr 1fr}.rates{padding:14px}.hero small{max-width:165px}.top-right #refresh{font-size:13px;padding:8px}.rates .fx strong{font-size:18px}}
-.rates .fx-flags{font-weight:650;letter-spacing:.04em;font-size:12px;color:var(--muted)}
+/* Ledger order follows the reading order of the page, including on phones. */
+main.shell > .hero { order: 0; }
+main.shell > .assets { order: 1; }
+main.shell > .snapshot { order: 2; }
+main.shell > .market-grid { order: 3; }
+main.shell > .rates { order: 4; margin-block: 14px; }
+main.shell > .quick-access { order: 5; }
+main.shell > footer { order: 6; }
+.snapshot { display: block; }
+.rates h2 { font-size: 18px; margin: 0 0 14px; }
+.rates .fx { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.rates .fx > small { grid-column: 1 / -1; }
