@@ -8,3 +8,20 @@ html,body.pulse{background:#101110;color:#f5f4eb;--mint:#8aff8a;--edge:#354736;-
 .asset{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;padding:0 10px;border:0;border-right:1px solid #354236}.asset:last-child{border:0}.asset-top{margin-bottom:5px}.asset .price{font-size:clamp(18px,2.3vw,26px)}.asset .meta{font-size:10px;text-align:left}.asset .spark{display:none}.asset .spark.ready{display:block;order:5;height:20px;width:65px}
 .panel{background:linear-gradient(120deg,#1c281c,#141714);border:1px solid #3e5c40;border-radius:22px;box-shadow:none}.snapshot .eyebrow{color:#8aff8a}.snapshot h2{font-size:clamp(23px,3vw,36px);letter-spacing:-.05em;margin:7px 0}.snapshot p{line-height:1.6}
 @media(max-width:650px){.pulse .shell{width:calc(100% - 32px)}.pulse .top{height:56px}.pulse-hero{min-height:202px;padding:22px 0}.pulse h1{font-size:clamp(63px,16vw,95px);margin:12px 0 6px}.coin-art{width:59%;right:-6%;opacity:.68}.cards{grid-template-columns:1fr 1fr;gap:15px 0}.asset:nth-child(2){border:0}.asset .price{font-size:19px}.asset .change{font-size:12px}.panel{padding:15px}.market-grid .panel{min-width:0}}
+/* A single black canvas, with the two instruments as the visual focus. */
+html,body.pulse{background:#000;color:#f4f0e6;--mint:#59dea2;--muted:#b6b4aa;--edge:#373731}
+.pulse .top{border-color:var(--edge)}.pulse .top button,.quick-access a{background:#050505;color:#f4f0e6;border-color:var(--edge);border-radius:24px}
+.pulse-hero{min-height:210px;padding-block:18px}.pulse-intro .eyebrow,.pulse h1 span,.snapshot .eyebrow{color:var(--mint)}
+.coin-art{width:42%;background:none}.coin-art img{max-height:220px}
+.pulse .panel{border:1px solid var(--edge);border-radius:24px;background:#0b0b0a;box-shadow:none}
+.pulse .cards,.pulse .asset{border-color:var(--edge)}.market-grid{gap:16px}.market-grid .panel{padding:20px 24px;min-height:230px}
+.market-grid .section-title{font-size:11px}.market-grid h2{font-size:clamp(20px,2.3vw,28px)}
+.gauge{width:min(190px,95%);margin:12px auto 0}.gauge-value{line-height:1}.gauge-value strong{font-size:clamp(26px,3vw,40px)}
+.fear-label{margin:4px auto}.scale{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.pulse .ratio{position:relative;isolation:isolate;overflow:hidden;border-color:#68604e;background:linear-gradient(128deg,#393837 0%,#191a19 24%,#151514 52%,#3a3326 82%,#554630 100%);box-shadow:inset 0 1px 0 #f4e9c85c,inset 0 -1px 0 #dadfe51a}
+.ratio::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;background:linear-gradient(116deg,transparent 8%,#e9ecec0f 25%,transparent 37%,transparent 63%,#ebcd8b12 81%,transparent 95%)}
+.ratio .ratio-number{color:#f0dfb7;font-size:clamp(44px,7vw,82px);font-weight:750;line-height:1.04;margin:auto 0 5px;letter-spacing:-.065em;background:linear-gradient(110deg,#ebedf0,#d1c6ac 43%,#fbe6ad 70%,#cfb781);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;align-self:flex-start}
+.ratio .ratio-bar{display:block;height:4px;border-radius:5px;background:linear-gradient(95deg,#858990,#e2e4e9 25%,#aea99a 47%,#bfa775 65%,#fff1c4 83%,#b89a62);margin:10px 0 8px}
+.ratio .meta{margin-top:0}.ratio p{color:#ccc8be;margin:3px 0}.rates,.snapshot{margin-top:16px}.rates .fx>div{border-color:var(--edge)}.quick-access a{border:1px solid var(--edge);padding:8px 14px}
+@media(max-width:650px){.pulse-hero{min-height:150px}.coin-art{right:-3%;width:48%}.market-grid{gap:8px}.market-grid .panel{min-height:190px;padding:13px 12px;border-radius:20px}.market-grid .section-title{font-size:10px}.market-grid .section-title a{font-size:10px}.market-grid h2{font-size:18px}.ratio .ratio-number{font-size:clamp(31px,9vw,52px)}.gauge{max-width:124px}.scale,.market-grid .meta{font-size:10px}.ratio p{font-size:12px}}
+.market-grid + .quote-grid{margin-top:24px}
