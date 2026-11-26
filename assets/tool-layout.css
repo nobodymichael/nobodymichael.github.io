@@ -1,0 +1,4 @@
+@media screen{
+.tool-title{padding-block:20px;min-height:0}.tool-orbit{display:none}.tool-title h1{font-size:clamp(38px,5vw,64px)}.tool-page .panel{background:#191c20;border-color:#33383c;box-shadow:none;border-radius:14px}.tool-page .nav{min-height:58px}.tool-page .nav .back{display:inline-flex}.tool-page .workspace{align-items:start}.tool-page .step{letter-spacing:.07em}.tool-page .footer{margin-top:24px}.tool-page .tool-title{display:flex;gap:16px;align-items:center;justify-content:space-between}
+@media(max-width:620px){.tool-page .tool-title{align-items:start;flex-direction:column;gap:6px}.tool-page .tool-intro{margin:0;text-align:left}.tool-page .panel{padding:14px}}
+}
