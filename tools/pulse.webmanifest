@@ -1,12 +1,12 @@
 {
   "id": "./pulse.html",
-  "name": "PULSE \u2014 Market Terminal",
+  "name": "PULSE — Market Terminal",
   "short_name": "PULSE",
   "start_url": "./pulse.html",
   "scope": "./pulse.html",
   "display": "standalone",
-  "background_color": "#111113",
-  "theme_color": "#111113",
+  "background_color": "#101110",
+  "theme_color": "#101110",
   "lang": "pl",
   "icons": [
     {
