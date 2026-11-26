@@ -1,0 +1,6 @@
+/* Keep the shared tools still, including on first visit. */
+*, *::before, *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
