@@ -42,7 +42,7 @@ jobs:
       - name: Prepare static website
         run: |
           mkdir -p /tmp/nobody-site
-          cp -r index.html assets tools /tmp/nobody-site/
+          cp -r index.html manifest.webmanifest assets tools pulse qrgen exif licenses /tmp/nobody-site/
           if [ -d data/pulse ]; then
             mkdir -p /tmp/nobody-site/data/pulse
             cp data/pulse/????-??-??.json data/pulse/index.json /tmp/nobody-site/data/pulse/
