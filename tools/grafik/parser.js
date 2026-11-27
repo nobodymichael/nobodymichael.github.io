@@ -8,7 +8,7 @@ export function describe(parts) {
     return {text:a+'–'+b+(minutes(b)<minutes(a)?' (+1)':'')+(note?' · '+note:''), off:false};
   }
   const code=parts.join('').replace(/\s/g,'');
-  if (/^(DW5|NŚ|DWH|DWS|DWN)(?:\d{4}-?\d{2}-\d{2})?$/.test(code)) return {text:'Wolne',off:true};
+  if (/^(DW5|NŚ|DWH|DWS|DWN)(?:\d{4}-?\d{2}-\d{2})?$/.test(code)) return {text:'Wolne',off:true,code:code.replace(/\d{4}-?\d{2}-?\d{2}$/,'')};
   return {text:parts.join(' ') || 'Brak wpisu',off:false};
 }
 export function readPage(items){
