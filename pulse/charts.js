@@ -93,4 +93,39 @@
   panel.addEventListener('toggle',()=>{if(panel.open&&!active)load();else if(panel.open)draw()});
   asset.onchange=range.onchange=load;slider.oninput=draw;panel.querySelector('button').onclick=()=>{snapshots.delete('latest');load()};
   new ResizeObserver(draw).observe(panel);
+  const dialog=document.getElementById('chart-dialog');
+  const slot=document.getElementById('tv-slot');
+  const instruments=[
+    ['asset-bitcoin','btc','Bitcoin','COINBASE:BTCUSD'],
+    ['asset-ethereum','eth','Ethereum','COINBASE:ETHUSD'],
+    ['asset-XAU','xau','Złoto','OANDA:XAUUSD'],
+    ['asset-XAG','xag','Srebro','OANDA:XAGUSD'],
+    ['gold-silver','ratio','Gold/Silver Ratio','TVC:GOLDSILVER']
+  ];
+  function openChart(id,name,symbol){
+    asset.value=id;panel.open=false;active=false;version++;points=[];
+    document.getElementById('chart-title').textContent=name;
+    document.getElementById('chart-symbol').textContent=symbol;
+    document.getElementById('chart-source').href='https://www.tradingview.com/chart/?symbol='+encodeURIComponent(symbol);
+    const host=document.createElement('div'),surface=document.createElement('div');
+    host.className='tradingview-widget-container';surface.className='tradingview-widget-container__widget';
+    host.append(surface);slot.replaceChildren(host);
+    dialog.showModal();
+    const script=document.createElement('script');
+    script.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+    script.async=true;
+    script.textContent=JSON.stringify({autosize:true,symbol,interval:'D',timezone:'Europe/Warsaw',theme:'dark',style:'1',locale:'pl',allow_symbol_change:false,withdateranges:true,hide_side_toolbar:matchMedia('(max-width:600px)').matches,save_image:false});
+    script.onerror=()=>{if(host.isConnected){surface.textContent='TradingView jest niedostępny. Poniżej możesz otworzyć historię dzienną.';panel.open=true}};
+    host.append(script);
+  }
+  for(const [elementId,id,name,symbol] of instruments){
+    const card=document.getElementById(elementId);if(!card)continue;
+    card.dataset.chart=id;card.tabIndex=0;card.setAttribute('role','button');
+    card.setAttribute('aria-haspopup','dialog');card.setAttribute('aria-label','Otwórz wykres: '+name);
+    card.onclick=()=>openChart(id,name,symbol);
+    card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();card.click()}};
+  }
+  document.getElementById('chart-close').onclick=()=>dialog.close();
+  dialog.addEventListener('click',e=>{if(e.target!==dialog)return;const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close()});
+  dialog.addEventListener('close',()=>{slot.replaceChildren();version++;points=[];panel.open=false;active=false});
 })();
