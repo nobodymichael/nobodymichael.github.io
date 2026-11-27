@@ -10,7 +10,7 @@ const title=()=>dayDate(0).toLocaleDateString('pl-PL',{year:'numeric',month:'lon
 const chosen=()=>[owner,...[...selected].filter(i=>i!==owner).sort((a,b)=>a-b)];
 el('file').onchange=async()=>{
   const version=++revision,file=el('file').files[0];
-  schedule=null;selected.clear();el('picker').hidden=el('preview').hidden=true;
+  schedule=null;selected.clear();el('picker').hidden=el('preview').hidden=el('daily').hidden=true;el('vault-save').hidden=true;
   if(!file){el('status').textContent='';return}
   el('status').textContent='Odczytuję grafik…';
   let pdf;
@@ -24,13 +24,7 @@ el('file').onchange=async()=>{
       else throw Error('Plik zawiera kilka różnych miesięcy.');
     }
     if(version!==revision)return;
-    const managers=new Set(['8799bd50a8e7f34b7a9b78ad9f227f07382faedeffb2a5a817152b985bd07058', '89cceb271dfb0da3b63eb693322ed4c36efff0a3701230148f9f08ca786131e7', 'a0336462ea67466ebd71214cdb63d28467050462e18bda12e887bb2ddd4deaee']);
-    await Promise.all(data.people.map(async person=>{
-      const words=person.name.toLocaleUpperCase('pl').trim().split(/\s+/).sort().join(' ');
-      const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(words)));
-      person.manager=managers.has(Array.from(digest,b=>b.toString(16).padStart(2,'0')).join(''));
-    }));
-    if(version!==revision)return;
+    data.people.forEach(person=>{person.manager=false});
     const counts=new Map();
     for(const person of data.people){
       const [surname,first]=person.name.trim().toLocaleLowerCase('pl').split(/\s+/);
@@ -43,27 +37,25 @@ el('file').onchange=async()=>{
       const key=person.label;
       if(counts.get(key)>1){seen.set(key,(seen.get(key)||0)+1);person.label+=' ('+seen.get(key)+')'}
     }
-    schedule=data;owner=null;period=0;
-    const me=el('me');me.replaceChildren(new Option('Wybierz siebie',''));
-    data.people.forEach((p,i)=>me.add(new Option(p.label,i)));
-    el('others').replaceChildren();el('others').parentElement.hidden=true;
-    el('picker').hidden=false;el('status').textContent=title()+' · Osoby w grafiku: '+data.people.length;
+    data.people=data.people.map(({label,manager,shifts})=>({label,manager,shifts}));
+    install(data);el('file').value='';
+
   }catch(e){if(version===revision)el('status').textContent='Nie udało się odczytać grafiku. '+(e.name==='PasswordException'?'Plik wymaga hasła.':'Wybierz PDF z tabelą „Grafik planowany za okres” i zaznaczalnym tekstem.')}
   finally{if(pdf)await pdf.destroy()}
 };
 el('me').onchange=()=>{
   const val=el('me').value;owner=val===''?null:Number(val);
   el('others').replaceChildren();el('others').parentElement.hidden=owner===null;
-  el('preview').hidden=owner===null;
+  el('preview').hidden=el('daily').hidden=owner===null;el('vault-save').hidden=owner===null;
   if(owner===null)return;
-  selected.delete(owner);
+  selected=new Set(schedule.people.map((_,i)=>i).filter(i=>i!==owner));
   schedule.people.forEach((p,i)=>{
     if(i===owner)return;
     const label=element('label',''),box=document.createElement('input');box.type='checkbox';box.checked=selected.has(i);
     box.onchange=()=>{if(box.checked)selected.add(i);else selected.delete(i);preview()};
     label.append(box,p.label);el('others').append(label);
   });
-  preview();
+  preview();renderDaily();
 };
 let font;
 async function loadFont(){
@@ -205,3 +197,46 @@ function exportPages(doc){
   }
  }
 }
+
+const vaultKey='nobody-prism-roster-v1', iterations=600000;
+let dayIndex=0, lockTimer, vaultBusy=false, epoch=0;
+function hasVault(){try{return !!localStorage.getItem(vaultKey)}catch{return false}}
+function syncVault(){const stored=hasVault();el('vault-open').hidden=!stored||!!schedule;el('vault-delete').hidden=!stored;el('vault-lock').hidden=!schedule;el('import-panel').hidden=stored&&!schedule;el('vault-save').hidden=owner===null||owner===undefined;el('vault-pass').value=''}
+function dateIndex(offset){const d=new Date();d.setDate(d.getDate()+offset);return d.getFullYear()===schedule.year&&d.getMonth()+1===schedule.month?d.getDate()-1:-1}
+function install(data,chosenOwner=null){schedule=data;owner=null;selected.clear();period=0;
+ const me=el('me');me.replaceChildren(new Option('Wybierz siebie',''));data.people.forEach((p,i)=>me.add(new Option(p.label,i)));el('others').replaceChildren();el('others').parentElement.hidden=true;
+ const managerList=el('managers');managerList.replaceChildren();data.people.forEach((p,i)=>{const label=element('label',''),box=document.createElement('input');box.type='checkbox';box.checked=!!p.manager;box.onchange=()=>{p.manager=box.checked;renderDaily();if(owner!==null)preview()};label.append(box,p.label);managerList.append(label)});
+ el('daily-date').replaceChildren(...monthDays().map(d=>new Option(dayText(d),d)));dayIndex=dateIndex(1);if(dayIndex<0)dayIndex=dateIndex(0);if(dayIndex<0)dayIndex=0;el('daily-date').value=dayIndex;
+ el('picker').hidden=false;el('status').textContent=title()+' · Osoby w grafiku: '+data.people.length;
+ if(Number.isInteger(chosenOwner)&&chosenOwner>=0&&chosenOwner<data.people.length){me.value=String(chosenOwner);me.onchange()}syncVault();touch();
+}
+function mins(v){const h=Math.floor(v/60),m=v%60;return (h? h+' godz. ':'')+(m?m+' min':h?'':'0 min')}
+function time(v){const n=Math.round(v*60);return String(Math.floor(n/60)%24).padStart(2,'0')+':'+String(n%60).padStart(2,'0')+(n>=1440?' (+1)':'')}
+function intervals(i,d){const a=[];for(const shiftDay of [d-1,d,d+1]){if(shiftDay<0||shiftDay>=schedule.days)continue;const s=shiftInfo(i,shiftDay);if(s.start!==undefined&&s.end>s.start)a.push([s.start+(shiftDay-d)*24,s.end+(shiftDay-d)*24]);}return a}
+function card(label,sub){const div=element('div','');div.className='prism-shift';div.append(element('strong',label),element('small',sub));return div}
+function renderDaily(){if(!schedule||owner===null||owner===undefined)return;const d=dayIndex,mine=shiftInfo(owner,d),summary=el('day-summary'),team=el('day-team');summary.replaceChildren();team.replaceChildren();summary.append(card(dayText(d),mine.text));
+ el('today').disabled=dateIndex(0)<0;el('tomorrow').disabled=dateIndex(1)<0;
+ if(mine.start===undefined||mine.end<=mine.start){team.append(element('p','Brak godzin Twojej zmiany w grafiku na ten dzień.'));return}
+ const a=mine.start,b=mine.end;summary.append(element('p','Czas zmiany: '+mins(Math.round((b-a)*60))+' (bez odliczania przerw)'));
+ const rows=schedule.people.flatMap((p,i)=>{if(i===owner)return [];return intervals(i,d).map(([x,y])=>({p,x,y,start:Math.max(a,x),end:Math.min(b,y)})).filter(r=>r.end>r.start)}).sort((x,y)=>x.start-y.start||y.end-x.end);
+ const mgr=rows.filter(r=>r.p.manager),other=rows.filter(r=>!r.p.manager);
+ const roleKnown=schedule.people.some(p=>p.manager);team.append(element('h3','Kierownicy na Twojej zmianie'));
+ if(!roleKnown)team.append(element('p','Najpierw oznacz kierowników w ustawieniach grafiku.'));else if(!mgr.length)team.append(element('p','Brak pokrywających się zmian oznaczonych kierowników w dostępnych danych.'));
+ let covered=a;for(const r of mgr){if(r.start>covered)break;covered=Math.max(covered,r.end)}if(roleKnown&&mgr.length)team.append(element('p',covered>=b?'Pokrycie całej Twojej zmiany przez oznaczonych kierowników.':'Niepełne pokrycie Twojej zmiany przez oznaczonych kierowników.'));
+ function row(r){const div=card(r.p.label,time(r.x<0?r.x+24:r.x)+' – '+time(r.y<0?r.y+24:r.y)+' · razem '+mins(Math.round((r.end-r.start)*60)));const track=element('div',''),bar=element('span','');track.className='prism-overlap';bar.style.left=(r.start-a)/(b-a)*100+'%';bar.style.width=(r.end-r.start)/(b-a)*100+'%';track.append(bar);div.append(track);return div}
+ mgr.forEach(r=>team.append(row(r)));team.append(element('h3','Z kim pracujesz?'));if(!other.length)team.append(element('p','Brak pokrywających się zmian pozostałych osób.'));other.forEach(r=>team.append(row(r)));
+ if((d===0&&a<12)||(d===schedule.days-1&&b>24))team.append(element('small','Na granicy miesiąca poprzedni lub kolejny grafik może zawierać dodatkowe zmiany.'));
+}
+function setDay(d){if(d<0||!schedule)return;dayIndex=d;el('daily-date').value=d;renderDaily()}
+el('today').onclick=()=>setDay(dateIndex(0));el('tomorrow').onclick=()=>setDay(dateIndex(1));el('daily-date').onchange=()=>setDay(Number(el('daily-date').value));
+const bytesTo64=bytes=>{let s='';for(let i=0;i<bytes.length;i+=8192)s+=String.fromCharCode(...bytes.subarray(i,i+8192));return btoa(s)},from64=s=>Uint8Array.from(atob(s),x=>x.charCodeAt(0));
+async function keyFor(pass,salt){const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations,hash:'SHA-256'},key,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+function vaultStatus(t){el('vault-status').textContent=t}
+el('vault-save').onclick=async()=>{if(vaultBusy||!schedule||owner===null)return;const pass=el('vault-pass').value;el('vault-pass').value='';if(pass.length<14){vaultStatus('Użyj silnego, unikalnego hasła (min. 14 znaków).');return}if(hasVault()&&!confirm('Zastąpić poprzedni zaszyfrowany grafik?'))return;vaultBusy=true;const e=epoch;try{const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),plain=new TextEncoder().encode(JSON.stringify({schedule,owner}));const key=await keyFor(pass,salt);const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,plain));plain.fill(0);if(e!==epoch)return;localStorage.setItem(vaultKey,JSON.stringify({v:1,salt:bytesTo64(salt),iv:bytesTo64(iv),cipher:bytesTo64(cipher)}));syncVault();vaultStatus('Zapisano szyfrowany grafik na tym urządzeniu.')}catch{vaultStatus('Nie udało się zapisać grafiku. Sprawdź pamięć i bezpieczne połączenie.')}finally{vaultBusy=false}};
+el('vault-open').onclick=async()=>{if(vaultBusy)return;const pass=el('vault-pass').value;el('vault-pass').value='';vaultBusy=true;const e=epoch;try{const v=JSON.parse(localStorage.getItem(vaultKey));if(v.v!==1)throw Error();const key=await keyFor(pass,from64(v.salt)),plain=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:from64(v.iv)},key,from64(v.cipher))),payload=JSON.parse(new TextDecoder().decode(plain));plain.fill(0);if(e!==epoch)return;install(payload.schedule,payload.owner);vaultStatus('Odblokowano lokalny grafik.')}catch{vaultStatus('Nie udało się odblokować. Sprawdź hasło i zapis.')}finally{vaultBusy=false}};
+function lock(){++epoch;++revision;clearTimeout(lockTimer);schedule=null;owner=null;selected.clear();for(const id of ['picker','preview','daily'])el(id).hidden=true;for(const id of ['me','others','managers','sheet','day-summary','day-team','daily-date','period'])el(id).replaceChildren();el('file').value='';el('status').textContent='';el('month').textContent='';syncVault();vaultStatus('Zablokowano.')}
+el('vault-lock').onclick=lock;el('vault-delete').onclick=()=>{if(confirm('Usunąć zaszyfrowany grafik z tego urządzenia?')){try{localStorage.removeItem(vaultKey);lock();vaultStatus('Usunięto zapis lokalny.')}catch{vaultStatus('Nie można usunąć zapisu.')}}};
+function touch(){if(!schedule)return;clearTimeout(lockTimer);lockTimer=setTimeout(lock,5*60*1000)}
+for(const event of ['pointerdown','keydown','touchstart'])document.addEventListener(event,touch,{passive:true});
+let hiddenAt=0;document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(schedule&&hiddenAt&&Date.now()-hiddenAt>=5*60*1000)lock();});
+addEventListener('pagehide',()=>{if(schedule)lock()});syncVault();
