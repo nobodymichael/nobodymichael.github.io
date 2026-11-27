@@ -1,0 +1,6 @@
+<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#10161c"><title>Grafik pracy</title><link rel="stylesheet" href="style.css"></head>
+<body><main><a href="../../" class="back">← NOBODY</a><h1>Grafik pracy<span>.</span></h1>
+<section><label for="file">Grafik źródłowy</label><input type="file" id="file" accept="application/pdf,.pdf"><small>PDF jest odczytywany na tym urządzeniu.</small><p id="status" role="status"></p></section>
+<section id="picker" hidden><label for="me">Moja osoba</label><select id="me"></select><fieldset><legend>Pozostałe osoby</legend><div id="others"></div></fieldset></section>
+<section id="preview" hidden><div class="head"><h2 id="month"></h2><button id="download">Pobierz PDF</button></div><div class="scroll"><table></table></div></section>
+</main><script defer src="vendor/jspdf.umd.min.js"></script><script type="module" src="app.js"></script></body></html>
