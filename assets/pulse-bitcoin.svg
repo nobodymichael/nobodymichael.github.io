@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none">
+  <defs>
+    <linearGradient id="gold" x1="49" y1="31" x2="126" y2="149" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffe8aa"/>
+      <stop offset=".34" stop-color="#ffbd51"/>
+      <stop offset=".57" stop-color="#e58a26"/>
+      <stop offset=".8" stop-color="#ffbd56"/>
+      <stop offset="1" stop-color="#e68b2f"/>
+    </linearGradient>
+    <path id="mark" fill-rule="evenodd" d="M47 44h17V27h9v17h9V27h9v17h6c20 0 31 9 31 23 0 9-4 15-12 19 12 4 18 12 18 23 0 17-13 28-36 28h-7v17h-9v-17h-9v17h-9v-17H45l3-13h9c3 0 5-2 5-6V63c0-4-2-6-6-6h-9zm34 14v23h12c10 0 16-4 16-12s-6-11-17-11zm0 37v28h14c13 0 20-5 20-14s-7-14-21-14z"/>
+  </defs>
+  <g transform="rotate(12 90 90)">
+    <use href="#mark" transform="translate(3 4)" fill="#9d531c"/>
+    <use href="#mark" fill="url(#gold)" stroke="#ffce77" stroke-width="1.2" stroke-linejoin="round"/>
+  </g>
+</svg>

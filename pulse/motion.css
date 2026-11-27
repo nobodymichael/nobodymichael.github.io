@@ -5,23 +5,24 @@
   display: grid;
   place-items: center;
 }
+.coin-art .coin-stage img {
+  display: block;
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  mask-image: none;
+  mix-blend-mode: normal;
+}
 @media (prefers-reduced-motion: no-preference) {
   .coin-art .coin-stage {
     height: min(100%, 220px);
     animation: pulse-coin-drift 7s ease-in-out infinite !important;
   }
-  .coin-art .coin-stage img {
-    display: block;
-    height: 100%;
-    width: 100%;
-    object-fit: contain;
-  }
-  /* A screen-blended copy keeps the moving highlight on the bright metal. */
   .coin-stage::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: url("../assets/pulse-btc.webp") center / contain no-repeat;
+    background: url("../assets/pulse-bitcoin.svg") center / contain no-repeat;
     mix-blend-mode: screen;
     mask-image: linear-gradient(112deg, transparent 39%, black 49%, transparent 58%);
     mask-size: 350% 100%;
