@@ -65,13 +65,13 @@ el('download').onclick=async()=>{
   const button=el('download'),version=revision;button.disabled=true;
   try{
     const typeface=await loadFont();if(version!==revision||owner===null)return;
-    const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4',orientation:view==='grid'?'landscape':'portrait',compress:true});
+    const doc=new window.jspdf.jsPDF({unit:'mm',format:view==='axis'?'a4':'a3',orientation:view!=='axis'?'landscape':'portrait',compress:true});
     doc.addFileToVFS('sans.ttf',typeface);doc.addFont('sans.ttf','Grafik','normal');doc.setFont('Grafik');
     exportPages(doc);
-    doc.save('grafik-'+(view==='grid'?'tabela-':'os-czasu-')+schedule.year+'-'+String(schedule.month).padStart(2,'0')+'.pdf');
+    doc.save('grafik-'+(view!=='axis'?'tabela-':'os-czasu-')+schedule.year+'-'+String(schedule.month).padStart(2,'0')+'.pdf');
   }catch{el('status').textContent='Nie udało się wygenerować PDF-u. Spróbuj ponownie.'}finally{button.disabled=false}
 };
-let view='grid',period=0;
+let view=matchMedia('(max-width: 650px)').matches?'mobile':'grid',period=0;
 const groups=()=>[['Zespół',chosen().filter(i=>!schedule.people[i].manager)],['Kierownicy i zastępcy',chosen().filter(i=>schedule.people[i].manager)]].filter(([,ids])=>ids.length);
 function personName(i){
  const words=schedule.people[i].name.toLocaleLowerCase('pl').split(/\s+/);
@@ -93,16 +93,33 @@ function scale(d){
  return {start,end,ticks,pos:h=>(h-start)/(end-start)};
 }
 const tick=h=>String(h%24).padStart(2,'0')+(h>=24?'+1':'');
-const weekDays=w=>Array.from({length:Math.min(7,schedule.days-w*7)},(_,i)=>w*7+i);
+const monthDays=()=>Array.from({length:schedule.days},(_,i)=>i);
+function mobileMonth(sheet){
+ for(const d of monthDays()){
+  const card=element('details',''),summary=element('summary',''),mine=shiftInfo(owner,d);
+  card.className='daycard';
+  const badge=element('span',mine.text);badge.className='shift '+mine.kind;
+  summary.append(element('strong',dayText(d)),badge);card.append(summary);
+  for(const [name,ids] of groups()){
+   card.append(element('h3',name));
+   for(const i of ids){
+    const row=element('div',''),s=shiftInfo(i,d),time=element('span',s.text);
+    time.className='shift '+s.kind;row.className='personline';row.append(element('span',personName(i)),time);card.append(row);
+   }
+  }
+  sheet.append(card);
+ }
+}
 function preview(){
- const grid=view==='grid',count=grid?Math.ceil(schedule.days/7):schedule.days;
- el('grid').setAttribute('aria-pressed',String(grid));el('axis').setAttribute('aria-pressed',String(!grid));
- el('month').textContent=title();const select=el('period');select.replaceChildren();
- for(let i=0;i<count;i++){const dates=grid?weekDays(i):[i];select.add(new Option(grid?dayText(dates[0])+' – '+dayText(dates.at(-1)):dayText(i),i))}
- select.value=period;
+ for(const mode of ['grid','mobile','axis'])el(mode).setAttribute('aria-pressed',String(view===mode));
+ el('month').textContent=title();
+ const select=el('period');select.hidden=view!=='axis';
+ select.replaceChildren();
+ if(view==='axis'){for(const d of monthDays())select.add(new Option(dayText(d),d));select.value=period}
  const sheet=el('sheet');sheet.replaceChildren();
- if(grid){
-  const days=weekDays(period),table=element('table',''),head=table.createTHead().insertRow();
+ if(view==='mobile'){mobileMonth(sheet);return}
+ if(view==='grid'){
+  const days=monthDays(),table=element('table',''),head=table.createTHead().insertRow();
   for(const text of ['Osoba',...days.map(dayText)])head.append(element('th',text));
   for(const [group,ids] of groups()){
    const body=table.createTBody(),row=body.insertRow(),label=element('th',group);label.colSpan=days.length+1;row.className='group';row.append(label);
@@ -122,10 +139,10 @@ function preview(){
   }sheet.append(panel);
  }
 }
-for(const mode of ['grid','axis'])el(mode).onclick=()=>{if(view===mode)return;period=mode==='axis'?period*7:Math.floor(period/7);view=mode;preview()};
+for(const mode of ['grid','mobile','axis'])el(mode).onclick=()=>{view=mode;preview()};
 el('period').onchange=()=>{period=Number(el('period').value);preview()};
 function exportPages(doc){
- const grid=view==='grid',width=doc.internal.pageSize.getWidth(),height=doc.internal.pageSize.getHeight();
+ const grid=view!=='axis',width=doc.internal.pageSize.getWidth(),height=doc.internal.pageSize.getHeight();
  let pages=0;
  function text(value,x,y,size=10,color='#182d46',max=Infinity){
   doc.setFontSize(size);doc.setFontSize(size*Math.min(1,max/Math.max(.1,doc.getTextWidth(value))));doc.setTextColor(color);doc.text(value,x,y);
@@ -139,13 +156,13 @@ function exportPages(doc){
   }
   text('(+1)  następny dzień',12,height-6,8);text(String(pages),width-17,height-6,8);
  }
- const count=grid?Math.ceil(schedule.days/7):schedule.days;
+ const count=grid?1:schedule.days;
  for(let period=0;period<count;period++){
-  const days=grid?weekDays(period):[period],sc=grid?null:scale(period);
-  const nameEnd=grid?63:65,span=width-nameEnd-13,cw=span/days.length;
+  const days=grid?monthDays():[period],sc=grid?null:scale(period);
+  const nameEnd=grid?48:65,span=width-nameEnd-13,cw=span/days.length;
   function startPage(){
    header(grid?dayText(days[0])+' – '+dayText(days.at(-1)):dayText(period));
-   if(grid)days.forEach((d,j)=>text(dayText(d),nameEnd+j*cw+1,43,9));
+   if(grid)days.forEach((d,j)=>text(dayText(d),nameEnd+j*cw+.5,43,9,'#182d46',cw-1));
    else sc.ticks.forEach(h=>text(tick(h),nameEnd+sc.pos(h)*span-2,43,8));
    return 47;
   }
@@ -156,12 +173,14 @@ function exportPages(doc){
   for(const [group,ids] of groups()){
    if(y+16>height-13)y=startPage();groupLabel(group);
    for(const i of ids){
-    const rh=grid?6.5:10;
+    const rh=grid?Math.min(13,(height-62-7*groups().length)/chosen().length):10;
     if(y+rh>height-13){y=startPage();groupLabel(group)}
     text(personName(i),13,y+4.5,9,'#182d46',nameEnd-15);
     if(grid)days.forEach((d,j)=>{
      const s=shiftInfo(i,d),x=nameEnd+j*cw;
-     doc.setFillColor(palette[s.kind]);doc.roundedRect(x,y,cw-1,5.9,1.2,1.2,'F');text(s.text,x+1.5,y+4.6,9,'#152c41',cw-4);
+     doc.setFillColor(palette[s.kind]);doc.roundedRect(x,y,cw-.6,rh-.7,.8,.8,'F');
+     const lines=s.start===undefined?[s.text]:s.text.split('–');
+     lines.forEach((line,k)=>text(line,x+.7,y+(k+1)*rh/(lines.length+1)+.8,8,'#152c41',cw-2));
     });
     else{
      const s=shiftInfo(i,period);text(s.text,13,y+8,8,'#445976',nameEnd-15);
