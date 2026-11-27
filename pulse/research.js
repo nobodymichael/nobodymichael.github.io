@@ -76,9 +76,10 @@
   series.forEach((v,i)=>{if(valid(v)){ctx.beginPath();ctx.arc(x(i),y(v),1.8,0,Math.PI*2);ctx.fill()}});
   const end=history[30],latest=series[30];$('metal-source').textContent=(valid(latest)?'Ostatni: '+fmt.format(latest)+' · '+end.date+' · ':'')+'Currency API · '+values.length+'/31 odczytów · linia przerywana: mediana';
  }
- let loadedAt=0;
+ let loadedAt=0,requested=false;
+ const visible=()=>!$('scanner').closest('[data-view]').hidden;
  async function load(){
-  const ticket=++version;$('scan-source').textContent='Pobieranie historii…';$('metal-source').textContent='Pobieranie zakresu…';
+  requested=true;const ticket=++version;$('scan-source').textContent='Pobieranie historii…';$('metal-source').textContent='Pobieranie zakresu…';
   try{
    PulseHistory.refresh();const last=await PulseHistory.getSnapshot('latest');if(ticket!==version)return;
    const end=Date.parse(last.date+'T00:00:00Z'),series=Array(31).fill(null);series[30]=last;
@@ -88,9 +89,10 @@
    const queue=Array.from({length:29},(_,i)=>i+1).filter(i=>i!==23&&i!==29);
    async function worker(){while(queue.length&&ticket===version)await sample(queue.shift())}
    await Promise.all(Array.from({length:4},worker));if(ticket===version){renderMatrix();metal();loadedAt=Date.now()}
-  }catch{if(ticket===version){$('scan-source').textContent='Historia niedostępna. Użyj „Odśwież”, aby ponowić.';$('metal-source').textContent='Historia niedostępna.'}}
+  }catch{if(ticket===version){requested=false;$('scan-source').textContent='Historia niedostępna. Użyj „Odśwież”, aby ponowić.';$('metal-source').textContent='Historia niedostępna.'}}
  }
- $('refresh').addEventListener('click',load);window.addEventListener('DOMContentLoaded',load);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden&&loadedAt&&Date.now()-loadedAt>3600000)load()});
+ $('refresh').addEventListener('click',()=>{if(visible())load()});
+ document.addEventListener('pulse-view',()=>{if(visible()&&(!requested||loadedAt&&Date.now()-loadedAt>3600000))load()});
+ document.addEventListener('visibilitychange',()=>{if(visible()&&!document.hidden&&loadedAt&&Date.now()-loadedAt>3600000)load()});
  new ResizeObserver(()=>{if(history.some(Boolean))metal()}).observe($('metal-history').parentElement);
 })();

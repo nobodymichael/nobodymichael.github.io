@@ -15,7 +15,10 @@
  function switcher(id,items,current,select){
   $(id).replaceChildren(...items.map(v=>{const b=button(v,()=>select(v));b.setAttribute('aria-pressed',String(current===v));return b}));
  }
+ const search=$('find');
+ search.addEventListener('input',show);
  function show(){
+  const query=search.value.trim().toLocaleLowerCase('pl');
   switcher('filter',categories,filter,v=>{filter=v;write('filter',v);show()});
   switcher('unit',['USD','PLN'],unit,v=>{unit=v;write('unit',v);show()});
   let visible=0;
@@ -29,10 +32,11 @@
    const star=wrap.querySelector('.star');star.textContent=stars.has(key)?'★':'☆';star.setAttribute('aria-pressed',String(stars.has(key)));star.setAttribute('aria-label','Obserwuj '+ids[key]);
    const metal=key==='XAU'||key==='XAG';
    wrap.hidden=!(filter==='Wszystkie'||(filter===categories[3]?stars.has(key):filter==='Metale'?metal:!metal));
+   if(query && !(card.querySelector('.asset-name').textContent+' '+ids[key]).toLocaleLowerCase('pl').includes(query))wrap.hidden=true;
    if(!wrap.hidden)visible++;
    const q=quotes[key];if(q?.price>0)card.querySelector('.price').textContent=money(q.price*conversion());
   }
-  $('list-note').hidden=visible>0;$('list-note').textContent='Dotknij gwiazdki przy aktywie, aby dodać je do obserwowanych.';
+  $('list-note').hidden=visible>0;$('list-note').textContent=query?'Brak wyników. Zmień wyszukiwanie lub filtr.':'Dotknij gwiazdki przy aktywie, aby dodać je do obserwowanych.';
   $('quotes').querySelector('.section-title span').textContent=unit+' · metale za uncję'+(unit==='PLN'?' · NBP '+(quotes.usd?.date||'—'):'');
  }
  document.addEventListener('pulse-quotes',e=>{quotes=e.detail;show()});
