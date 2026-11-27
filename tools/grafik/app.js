@@ -31,9 +31,21 @@ el('file').onchange=async()=>{
       person.manager=managers.has(Array.from(digest,b=>b.toString(16).padStart(2,'0')).join(''));
     }));
     if(version!==revision)return;
+    const counts=new Map();
+    for(const person of data.people){
+      const [surname,first]=person.name.trim().toLocaleLowerCase('pl').split(/\s+/);
+      const given=first?.replace(/(^|-)(\p{L})/gu,(_,dash,c)=>dash+c.toLocaleUpperCase('pl'));
+      person.label=[given,surname[0].toLocaleUpperCase('pl')].filter(Boolean).join(' ');
+      counts.set(person.label,(counts.get(person.label)||0)+1);
+    }
+    const seen=new Map();
+    for(const person of data.people){
+      const key=person.label;
+      if(counts.get(key)>1){seen.set(key,(seen.get(key)||0)+1);person.label+=' ('+seen.get(key)+')'}
+    }
     schedule=data;owner=null;period=0;
     const me=el('me');me.replaceChildren(new Option('Wybierz siebie',''));
-    data.people.forEach((p,i)=>me.add(new Option(p.name,i)));
+    data.people.forEach((p,i)=>me.add(new Option(p.label,i)));
     el('others').replaceChildren();el('others').parentElement.hidden=true;
     el('picker').hidden=false;el('status').textContent=title()+' · Osoby w grafiku: '+data.people.length;
   }catch(e){if(version===revision)el('status').textContent='Nie udało się odczytać grafiku. '+(e.name==='PasswordException'?'Plik wymaga hasła.':'Wybierz PDF z tabelą „Grafik planowany za okres” i zaznaczalnym tekstem.')}
@@ -49,7 +61,7 @@ el('me').onchange=()=>{
     if(i===owner)return;
     const label=element('label',''),box=document.createElement('input');box.type='checkbox';box.checked=selected.has(i);
     box.onchange=()=>{if(box.checked)selected.add(i);else selected.delete(i);preview()};
-    label.append(box,p.name);el('others').append(label);
+    label.append(box,p.label);el('others').append(label);
   });
   preview();
 };
@@ -74,8 +86,7 @@ el('download').onclick=async()=>{
 let view=matchMedia('(max-width: 650px)').matches?'mobile':'grid',period=0;
 const groups=()=>[['Zespół',chosen().filter(i=>!schedule.people[i].manager)],['Kierownicy i zastępcy',chosen().filter(i=>schedule.people[i].manager)]].filter(([,ids])=>ids.length);
 function personName(i){
- const words=schedule.people[i].name.toLocaleLowerCase('pl').split(/\s+/);
- return [...words.slice(1),words[0]].map(w=>w.replace(/(^|-)(\p{L})/gu,(_,p,c)=>p+c.toLocaleUpperCase('pl'))).join(' ')+(i===owner?' · Ty':'');
+ return schedule.people[i].label+(i===owner?' · Ty':'');
 }
 const palette={morning:'#b7e2ff',late:'#ffe492',night:'#d8d0fa',off:'#edf0f3',other:'#edf0f3'};
 function shiftInfo(i,d){
@@ -99,12 +110,12 @@ function mobileMonth(sheet){
   const card=element('details',''),summary=element('summary',''),mine=shiftInfo(owner,d);
   card.className='daycard';
   const badge=element('span',mine.text);badge.className='shift '+mine.kind;
-  summary.append(element('strong',dayText(d)),badge);card.append(summary);
+  summary.className='mine';summary.append(element('strong',dayText(d)),badge);card.append(summary);
   for(const [name,ids] of groups()){
    card.append(element('h3',name));
    for(const i of ids){
     const row=element('div',''),s=shiftInfo(i,d),time=element('span',s.text);
-    time.className='shift '+s.kind;row.className='personline';row.append(element('span',personName(i)),time);card.append(row);
+    time.className='shift '+s.kind;row.className=i===owner?'personline mine':'personline';row.append(element('span',personName(i)),time);card.append(row);
    }
   }
   sheet.append(card);
@@ -123,7 +134,7 @@ function preview(){
   for(const text of ['Osoba',...days.map(dayText)])head.append(element('th',text));
   for(const [group,ids] of groups()){
    const body=table.createTBody(),row=body.insertRow(),label=element('th',group);label.colSpan=days.length+1;row.className='group';row.append(label);
-   for(const i of ids){const r=body.insertRow();r.append(element('th',personName(i)));
+   for(const i of ids){const r=body.insertRow();if(i===owner)r.className='mine';r.append(element('th',personName(i)));
     for(const d of days){const s=shiftInfo(i,d),badge=element('span',s.text);badge.className='shift '+s.kind;r.insertCell().append(badge)}}
   }sheet.append(table);
  }else{
@@ -132,7 +143,7 @@ function preview(){
   for(const [group,ids] of groups()){
    const header=element('h3',group);header.className='sectionname';panel.append(header);
    for(const i of ids){const s=shiftInfo(i,period),row=element('div',''),name=element('strong',personName(i)),track=element('div','');
-    row.className='lane';track.className='track';track.style.setProperty('--step',400/(sc.end-sc.start)+'%');name.append(element('small',s.text));
+    row.className=i===owner?'lane mine':'lane';track.className='track';track.style.setProperty('--step',400/(sc.end-sc.start)+'%');name.append(element('small',s.text));
     if(s.start!==undefined){const bar=element('span','');bar.className='bar '+s.kind;bar.style.left=sc.pos(s.start)*100+'%';bar.style.width=(sc.pos(s.end)-sc.pos(s.start))*100+'%';track.append(bar)}
     row.append(name,track);panel.append(row);
    }
@@ -175,6 +186,7 @@ function exportPages(doc){
    for(const i of ids){
     const rh=grid?Math.min(13,(height-62-7*groups().length)/chosen().length):10;
     if(y+rh>height-13){y=startPage();groupLabel(group)}
+    if(i===owner){doc.setFillColor('#e7f99d');doc.rect(12,y,width-24,rh,'F')}
     text(personName(i),13,y+4.5,9,'#182d46',nameEnd-15);
     if(grid)days.forEach((d,j)=>{
      const s=shiftInfo(i,d),x=nameEnd+j*cw;
@@ -187,6 +199,7 @@ function exportPages(doc){
      doc.setDrawColor('#d4dce4');sc.ticks.forEach(h=>{const x=nameEnd+span*sc.pos(h);doc.line(x,y,x,y+rh)});
      if(s.start!==undefined){doc.setFillColor(palette[s.kind]);doc.rect(nameEnd+span*sc.pos(s.start),y+2,(sc.pos(s.end)-sc.pos(s.start))*span,5,'F')}
     }
+    if(i===owner){doc.setFillColor('#afce34');doc.rect(12,y+rh-.8,width-24,.75,'F')}
     y+=rh;
    }
   }
