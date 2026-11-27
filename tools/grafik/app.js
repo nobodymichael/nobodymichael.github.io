@@ -41,7 +41,7 @@ el('file').onchange=async()=>{
     data.people=data.people.map(({label,manager,shifts})=>({label,manager,shifts}));
     install(data);el('file').value='';
 
-  }catch(e){if(version===revision)el('status').textContent='Nie udało się odczytać grafiku. '+(e.name==='PasswordException'?'Plik wymaga hasła.':'Wybierz PDF z tabelą „Grafik planowany za okres” i zaznaczalnym tekstem.')}
+  }catch(e){if(version===revision)el('status').textContent='Nie udało się odczytać grafiku. '+(e.name==='PasswordException'?'Plik wymaga hasła.':'Wybierz oryginalny PDF z tabelą „Grafik planowany za okres” i zaznaczalnym tekstem. Skan lub zdjęcie wymaga wcześniejszego rozpoznania tekstu.')}
   finally{if(pdf)await pdf.destroy()}
 };
 function filterCount(){
@@ -94,7 +94,7 @@ el('download').onclick=async()=>{
     doc.save('grafik-bw-'+mode+'-'+schedule.year+'-'+String(schedule.month).padStart(2,'0')+'.pdf');el('print-status').textContent='Wygenerowano PDF: '+doc.getNumberOfPages()+' str.';
   }catch{el('print-status').textContent='Nie udało się wygenerować PDF-u. Spróbuj ponownie.'}finally{button.disabled=false}
 };
-let view='day',period=0;
+let view='grid',period=0;
 const weekStart=d=>d-((dayDate(d).getDay()+6)%7);
 const weekDays=d=>monthDays().filter(x=>x>=weekStart(d)&&x<weekStart(d)+7);
 const weeks=()=>{const out=[];for(const d of monthDays())if(d===0||dayDate(d).getDay()===1)out.push(d);return out};
@@ -139,20 +139,20 @@ function mobileMonth(sheet){
 function preview(){
  el('month').textContent=title();
  const select=el('period'),isGrid=view==='grid',isAxis=view==='axis';
- el('period-controls').hidden=!(isGrid||isAxis);el('table-hint').hidden=!isGrid;
+ el('period-controls').hidden=!isAxis;el('table-hint').hidden=!isGrid;
  select.replaceChildren();
- if(isGrid){el('period-label').textContent='Tydzień';for(const d of weeks()){const ds=weekDays(d);select.add(new Option(dayText(ds[0])+' – '+dayText(ds.at(-1)),d))}period=weekDays(dayIndex)[0]}
+ if(isGrid){period=dayIndex}
  if(isAxis){el('period-label').textContent='Dzień';for(const d of monthDays())select.add(new Option(fullDay(d),d));period=dayIndex}
- if(isGrid||isAxis){select.value=period;el('period-prev').disabled=select.selectedIndex===0;el('period-next').disabled=select.selectedIndex===select.options.length-1}
+ if(isAxis){select.value=period;el('period-prev').disabled=select.selectedIndex===0;el('period-next').disabled=select.selectedIndex===select.options.length-1}
  const sheet=el('sheet');sheet.replaceChildren();sheet.scrollLeft=0;sheet.scrollTop=0;
  if(view==='mobile'){mobileMonth(sheet);return}
  if(isGrid){
-  const days=weekDays(dayIndex),table=element('table',''),head=table.createTHead().insertRow();
+  const days=monthDays(),table=element('table',''),head=table.createTHead().insertRow();table.className='month-matrix';
   head.append(element('th','Osoba'));
-  for(const d of days){const th=element('th',''),date=dayDate(d);th.scope='col';if(date.getDay()===0||date.getDay()===6)th.className='weekend';const number=element('span',String(d+1).padStart(2,'0'));number.className='day-number';const weekday=element('span',date.toLocaleDateString('pl-PL',{weekday:'short'}));weekday.className='day-weekday';th.append(number,weekday);head.append(th)}
+  for(const d of days){const th=element('th',''),date=dayDate(d);th.scope='col';if(date.getDay()===0||date.getDay()===6)th.classList.add('weekend');if(date.getDay()===1&&d>0)th.classList.add('week-start');const number=element('span',String(d+1).padStart(2,'0'));number.className='day-number';const weekday=element('span',date.toLocaleDateString('pl-PL',{weekday:'short'}));weekday.className='day-weekday';th.append(number,weekday);head.append(th)}
   for(const [group,ids] of groups()){
    const body=table.createTBody(),row=body.insertRow(),label=element('th',group);label.colSpan=days.length+1;row.className='group';row.append(label);
-   for(const i of ids){const tr=body.insertRow();if(i===owner)tr.className='mine';const name=element('th',personName(i));name.scope='row';tr.append(name);for(const d of days){const shift=shiftInfo(i,d),badge=element('span',shift.text);badge.className='shift '+shift.kind;tr.insertCell().append(badge)}}
+   for(const i of ids){const tr=body.insertRow();if(i===owner)tr.className='mine';const name=element('th',personName(i));name.scope='row';tr.append(name);for(const d of days){const shift=shiftInfo(i,d),badge=element('span',''),cell=tr.insertCell();badge.className='shift '+shift.kind;const parts=splitShift(shift);parts.forEach(p=>badge.append(element('span',p)));cell.title=shift.text;if(dayDate(d).getDay()===1&&d>0)cell.classList.add('week-start');if(dayDate(d).getDay()===0||dayDate(d).getDay()===6)cell.classList.add('weekend');cell.append(badge)}}
   }sheet.append(table);
  }else{
   const panel=element('div',''),sc=scale(dayIndex),ticks=element('div','');panel.className='timeline';ticks.className='ticks';
@@ -169,7 +169,72 @@ for(const mode of ['day','grid','mobile','axis'])el(mode).onclick=()=>{view=mode
 el('period').onchange=()=>setDay(Number(el('period').value));
 function movePeriod(n){const sel=el('period'),i=sel.selectedIndex+n;if(i>=0&&i<sel.options.length)setDay(Number(sel.options[i].value))}
 el('period-prev').onclick=()=>movePeriod(-1);el('period-next').onclick=()=>movePeriod(1);
+function splitShift(sh){
+ const m=sh.text.match(/^(\d{1,2}:\d{2})\s*–\s*(\d{1,2}:\d{2})(.*)$/);
+ if(m){const tail=m[3].trim();return [m[1].padStart(5,'0'),m[2].padStart(5,'0')+(tail.includes('(+1)')?' +':''),...((tail.replace('(+1)','').replace(/^\s*·\s*/,'').trim())?[tail.replace('(+1)','').replace(/^\s*·\s*/,'').trim()]:[])]}
+ if(sh.off)return [sh.code||'W'];
+ if(sh.text==='Brak wpisu')return ['–'];
+ return [sh.text];
+}
+function exportCompact(doc){
+ const width=doc.internal.pageSize.getWidth(),height=doc.internal.pageSize.getHeight(),margin=7,right=width-margin,days=monthDays(),nameEnd=39,cw=(right-nameEnd)/days.length,bottom=height-13;
+ const groupsList=groups(),notes=[], noteMap=new Map();
+ function text(v,x,y,size=8,max=Infinity,align='left'){
+  v=String(v);doc.setFontSize(size);doc.setFontSize(Math.min(size,size*max/Math.max(.1,doc.getTextWidth(v))));doc.setTextColor(0);doc.text(v,x,y,{align});
+ }
+ function line(x1,y1,x2,y2,w=.15){doc.setDrawColor(0);doc.setLineWidth(w);doc.line(x1,y1,x2,y2)}
+ function rectangle(x,y,w,h,gray=255){doc.setFillColor(gray);doc.rect(x,y,w,h,'F')}
+ function cellParts(i,d){
+  const sh=shiftInfo(i,d),p=splitShift(sh);
+  if(p.length>2||p.some(x=>x.length>7)){const key=String(i)+'-'+d;if(!noteMap.has(key)){notes.push(personName(i)+' · '+dayText(d)+': '+sh.text);noteMap.set(key,notes.length)}const ref='*'+noteMap.get(key);return p.length>=2?[p[0],p[1],ref]:[ref];}
+  return p;
+ }
+ const rows=groupsList.flatMap(([label,ids])=>[{group:label},...ids.map(i=>({i,parts:days.map(d=>cellParts(i,d))}))]);
+ const heights=rows.map(row=>row.group?6:Math.max(10.5,Math.max(...row.parts.map(p=>p.length))*3.1+3.3));
+ let page=0;
+ function header(){
+  if(page++)doc.addPage();
+  text('GRAFIK  /  '+title(),margin,13,16);
+  text('Wybrane osoby: '+chosen().length,right,13,8,Infinity,'right');
+  text('Godziny od / do  •  W = wolne  •  + = koniec następnego dnia  •  * = uwaga  •  TY = Twój wiersz',margin,20,8.2);
+  text('Osoba',margin+1.5,30,9);
+  for(const d of days){
+   const x=nameEnd+d*cw,date=dayDate(d);if(date.getDay()===0||date.getDay()===6)rectangle(x,23,cw,12,230);
+   text(String(d+1),x+cw/2,27.7,9,cw-1,'center');text(date.toLocaleDateString('pl-PL',{weekday:'short'}),x+cw/2,32,7.2,cw-1,'center');
+   line(x,23,x,35,date.getDay()===1&&d>0?.42:.15);
+  }
+  line(margin,23,right,23,.25);line(margin,35,right,35,.35);line(margin,23,margin,35);line(right,23,right,35);
+  text('NOBODY. / GRAFIK',margin,height-6,7.5);text(String(page),right,height-6,8,Infinity,'right');
+  return 35;
+ }
+ let y=header(),current='';
+ function group(label){rectangle(margin,y,right-margin,6,238);text(label,margin+2,y+4.1,8.6);line(margin,y+6,right,y+6,.3);y+=6}
+ for(let k=0;k<rows.length;k++){
+  const row=rows[k],rh=heights[k];
+  if(row.group){current=row.group;if(y+rh+(heights[k+1]||0)>bottom)y=header();group(current);continue}
+  if(y+rh>bottom){y=header();group(current+' (cd.)')}
+  const i=row.i;
+  if(i===owner)rectangle(margin,y,nameEnd-margin,rh,225);
+  text((i===owner?'TY · ':'')+schedule.people[i].label,margin+1.4,y+rh/2+1.3,9,nameEnd-margin-2.6);
+  line(margin,y,margin,y+rh);
+  for(const d of days){
+   const x=nameEnd+d*cw,parts=row.parts[d],date=dayDate(d);
+   if(date.getDay()===0||date.getDay()===6)rectangle(x,y,cw,rh,247);
+   line(x,y,x,y+rh,date.getDay()===1&&d>0?.42:.15);
+   const start=y+(rh-(parts.length-1)*3.1)/2+1.05;
+   parts.forEach((v,n)=>text(v,x+cw/2,start+n*3.1,7.5,cw-1,'center'));
+  }
+  line(right,y,right,y+rh);line(margin,y+rh,right,y+rh,i===owner?.5:.15);
+  if(i===owner){line(margin,y,right,y,.5);line(margin,y,margin,y+rh,.5);line(right,y,right,y+rh,.5)}
+  y+=rh;
+ }
+ if(notes.length){
+  doc.addPage();page++;text('GRAFIK / Uwagi do zmian',margin,14,16);text(title(),margin,20,10);let yy=30;
+  notes.forEach((n,i)=>{doc.setFontSize(9);const ls=doc.splitTextToSize('*'+(i+1)+'  '+n,right-margin);if(yy+ls.length*4>bottom){doc.addPage();yy=14;}ls.forEach(v=>{text(v,margin,yy,9);yy+=4});yy+=2});
+ }
+}
 function exportPages(doc,mode){
+ if(mode==='compact'){exportCompact(doc);return}
  const grid=mode==='month'||mode==='week',width=doc.internal.pageSize.getWidth(),height=doc.internal.pageSize.getHeight(),margin=10,right=width-margin,bottom=height-13;
  const blocks=grid?(mode==='week'?[weekDays(dayIndex)]:weeks().map(weekDays)):(mode==='day'?[[dayIndex]]:monthDays().map(d=>[d]));
  let pages=0;
@@ -231,7 +296,7 @@ let dayIndex=0, lockTimer, vaultBusy=false, epoch=0;
 function hasVault(){try{return !!localStorage.getItem(vaultKey)}catch{return false}}
 function syncVault(){const stored=hasVault();el('vault-indicator').textContent=schedule?'Odblokowany':stored?'Zablokowany':'Brak zapisu';el('vault-open').hidden=!stored||!!schedule;el('vault-delete').hidden=!stored;el('vault-lock').hidden=!schedule;el('import-panel').hidden=stored&&!schedule;el('vault-save').hidden=owner===null||owner===undefined;el('vault-pass').value=''}
 function dateIndex(offset){const d=new Date();d.setDate(d.getDate()+offset);return d.getFullYear()===schedule.year&&d.getMonth()+1===schedule.month?d.getDate()-1:-1}
-function install(data,chosenOwner=null,savedSelection=null){schedule=data;owner=null;selected.clear();period=0;view='day';el('people-settings').open=true;el('people-search').value='';el('manager-details').open=false;
+function install(data,chosenOwner=null,savedSelection=null){schedule=data;owner=null;selected.clear();period=0;view='grid';el('people-settings').open=true;el('people-search').value='';el('manager-details').open=false;
  const me=el('me');me.replaceChildren(new Option('Wybierz siebie',''));data.people.forEach((p,i)=>me.add(new Option(p.label,i)));el('others').replaceChildren();el('filter-picker').hidden=true;
  const managerList=el('managers');managerList.replaceChildren();data.people.forEach((p,i)=>{const label=element('label',''),box=document.createElement('input');box.type='checkbox';box.checked=!!p.manager;box.onchange=()=>{p.manager=box.checked;if(owner!==null){renderPeople();refreshView()}};label.append(box,p.label);managerList.append(label)});
  el('daily-date').replaceChildren(...monthDays().map(d=>new Option(fullDay(d),d)));dayIndex=dateIndex(0);if(dayIndex<0)dayIndex=dateIndex(1);if(dayIndex<0)dayIndex=0;el('daily-date').value=dayIndex;
