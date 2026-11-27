@@ -33,3 +33,12 @@ h1 .page-emblem{height:.62em;width:.62em;display:inline-block;vertical-align:.02
 @media(max-width:700px){.widget-board{gap:10px;grid-template-rows:none}.widget-board .tool-widget{min-height:155px;border-radius:23px}.widget-home h1{font-size:clamp(38px,11vw,66px)}.widget-board .widget-caption h2{font-size:clamp(19px,5vw,25px)}.widget-board .widget-caption p{font-size:12px}.pulse .market-grid{grid-template-columns:1fr}.pulse .asset{padding:12px}.pulse .fx>div{grid-template-columns:1fr auto}.pulse .fx>div small{grid-column:1/-1;text-align:left}}
 @media(prefers-reduced-motion:reduce){.prism-launch,.prism-launch *, .prism-launch::after,.widget-board .tool-widget{animation:none!important;transition:none!important}}
 }
+
+@media screen{
+body[data-app=exif] .panel{background:radial-gradient(ellipse at 100% 100%,#6a359b38,transparent 65%),var(--glass-face)}
+body[data-app=qrgen] .panel{background:radial-gradient(ellipse at 100% 100%,#147db83b,transparent 65%),var(--glass-face)}
+body[data-app=nobody] .widget-board .tool-widget::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(116deg,transparent 25%,#e0ecff14 42%,transparent 53%);box-shadow:inset -1px -1px 2px #cce4ff4a}
+.prism-launch[data-kind=grafik] img{animation:prism-qr .8s both!important}
+@media(prefers-reduced-motion:reduce){.prism-launch[data-kind=grafik] img{animation:none!important}}
+.prism-dial i[hidden]{display:none}
+}
