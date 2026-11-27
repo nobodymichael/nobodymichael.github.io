@@ -1,5 +1,5 @@
 import {getDocument,GlobalWorkerOptions} from './vendor/pdf.min.mjs';
-import {readPage} from './parser.js';
+import {readPage} from './parser.js?v=3';
 GlobalWorkerOptions.workerSrc=new URL('./vendor/pdf.worker.min.mjs',import.meta.url).href;
 const el=id=>document.getElementById(id);
 const element=(tag,text)=>Object.assign(document.createElement(tag),{textContent:text});
