@@ -8,40 +8,9 @@
   const quote = panel.querySelector('output');
   const day = 86400000;
   const format = new Intl.NumberFormat('pl-PL', {maximumFractionDigits: 2});
-  const colors = {ratio:'#ead19b', btc:'#efb76e', eth:'#b4b8ff', xau:'#f2d181', xag:'#d3dce7'};
+  const colors = {ratio:'#ead19b', btc:'#efb76e', eth:'#b4b8ff', sol:'#91e5c1', link:'#81aaff', xau:'#f2d181', xag:'#d3dce7'};
   let points = [], version = 0, active = false;
-  const snapshots = new Map();
-
-  async function getSnapshot(date) {
-    if (snapshots.has(date)) return snapshots.get(date);
-    const key = 'pulse-history-v1-' + date;
-    if (date !== 'latest') {
-      try {
-        const cached = JSON.parse(localStorage.getItem(key));
-        if (cached?.date === date && cached.usd?.xau > 0) return cached;
-      } catch {}
-    }
-    const job = (async () => {
-      for (const url of [
-        'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@'+date+'/v1/currencies/usd.min.json',
-        'https://'+date+'.currency-api.pages.dev/v1/currencies/usd.min.json'
-      ]) {
-        try {
-          const res = await fetch(url,{signal:AbortSignal.timeout(7000)});
-          if (!res.ok) continue;
-          const data = await res.json();
-          if (!/^\d{4}-\d{2}-\d{2}$/.test(data.date) || !data.usd || (date !== 'latest' && data.date !== date)) continue;
-          const compact = {date:data.date,usd:{}};
-          for(const id of ['xau','xag','btc','eth']) compact.usd[id]=Number(data.usd[id]);
-          try {localStorage.setItem('pulse-history-v1-'+data.date,JSON.stringify(compact))} catch {}
-          return compact;
-        } catch {}
-      }
-      throw Error('Brak odczytu');
-    })();
-    snapshots.set(date,job);
-    try {return await job} catch(e){snapshots.delete(date);throw e}
-  }
+  const {getSnapshot}=PulseHistory;
   function value(snapshot) {
     const rates=snapshot?.usd;
     if(!rates)return NaN;
@@ -91,16 +60,18 @@
     }catch{if(id===version)note.textContent='Historia niedostępna. Spróbuj ponownie.'}
   }
   panel.addEventListener('toggle',()=>{if(panel.open&&!active)load();else if(panel.open)draw()});
-  asset.onchange=range.onchange=load;slider.oninput=draw;panel.querySelector('button').onclick=()=>{snapshots.delete('latest');load()};
+  asset.onchange=range.onchange=load;slider.oninput=draw;panel.querySelector('button').onclick=()=>{PulseHistory.refresh();load()};
   new ResizeObserver(draw).observe(panel);
   const dialog=document.getElementById('chart-dialog');
   const slot=document.getElementById('tv-slot');
   const instruments=[
     ['asset-bitcoin','btc','Bitcoin','COINBASE:BTCUSD'],
     ['asset-ethereum','eth','Ethereum','COINBASE:ETHUSD'],
+    ['asset-solana','sol','Solana','COINBASE:SOLUSD'],
+    ['asset-chainlink','link','Chainlink','COINBASE:LINKUSD'],
     ['asset-XAU','xau','Złoto','OANDA:XAUUSD'],
     ['asset-XAG','xag','Srebro','OANDA:XAGUSD'],
-    ['gold-silver','ratio','Gold/Silver Ratio','TVC:GOLDSILVER']
+    ['gold-silver','ratio','Gold/Silver Ratio','SAXO:XAUXAG']
   ];
   function openChart(id,name,symbol){
     asset.value=id;panel.open=false;active=false;version++;points=[];
