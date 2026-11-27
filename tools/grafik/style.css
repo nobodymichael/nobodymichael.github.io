@@ -6,3 +6,11 @@ html{color-scheme:light}body{background:#edf2f7;color:#142541}.back,small,#statu
 .mine,.mine>th,.mine>td,.legend .my-mark{background-color:#e7f99d}
 .mine>td,.mine>th,.lane.mine,.personline.mine,.daycard summary.mine{box-shadow:inset 0 -3px #afce34}
 .daycard summary.mine,.personline.mine{padding-inline:8px}
+
+#vault input[type=password]{width:100%;margin:8px 0;padding:12px;border-radius:12px;border:1px solid #6c80b0;background:#111a30;color:white;font:inherit}
+#managers{display:flex;flex-wrap:wrap;gap:7px}#managers label{display:flex;align-items:center;gap:6px;padding:8px;border:1px solid #52678b;border-radius:10px;font-size:13px;font-weight:500}#managers label:has(:checked){background:#234063;border-color:#95b9ff}
+#day-summary .prism-shift{padding:18px;background:linear-gradient(130deg,#1c3e69,#232146);border-color:#7b9cdc}
+#day-summary .prism-shift small{font-size:clamp(24px,6vw,42px);font-weight:750;color:#f1f5ff}
+.prism-shift{display:grid;gap:5px;border:1px solid #6579a74d;background:#131e30;border-radius:14px;padding:13px;margin:9px 0;color:#eaf1ff}
+.prism-overlap{height:8px;border-radius:20px;background:#344563;position:relative;overflow:hidden}.prism-overlap span{position:absolute;height:100%;border-radius:20px;background:linear-gradient(90deg,#6a92ff,#b9a2ff);box-shadow:0 0 8px #9caeff}
+#day-team h3{margin:20px 0 6px;font-size:17px}#day-team p{font-size:14px;color:#c5d4eb}#vault-note{color:#c5d4eb;font-size:14px}
