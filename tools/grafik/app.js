@@ -24,7 +24,14 @@ el('file').onchange=async()=>{
       else throw Error('Plik zawiera kilka różnych miesięcy.');
     }
     if(version!==revision)return;
-    schedule=data;owner=null;
+    const managers=new Set(['8799bd50a8e7f34b7a9b78ad9f227f07382faedeffb2a5a817152b985bd07058', '89cceb271dfb0da3b63eb693322ed4c36efff0a3701230148f9f08ca786131e7', 'a0336462ea67466ebd71214cdb63d28467050462e18bda12e887bb2ddd4deaee']);
+    await Promise.all(data.people.map(async person=>{
+      const words=person.name.toLocaleUpperCase('pl').trim().split(/\s+/).sort().join(' ');
+      const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(words)));
+      person.manager=managers.has(Array.from(digest,b=>b.toString(16).padStart(2,'0')).join(''));
+    }));
+    if(version!==revision)return;
+    schedule=data;owner=null;period=0;
     const me=el('me');me.replaceChildren(new Option('Wybierz siebie',''));
     data.people.forEach((p,i)=>me.add(new Option(p.name,i)));
     el('others').replaceChildren();el('others').parentElement.hidden=true;
@@ -46,16 +53,6 @@ el('me').onchange=()=>{
   });
   preview();
 };
-function preview(){
-  el('month').textContent=title();const ids=chosen(),table=document.querySelector('table');
-  table.replaceChildren();const head=table.createTHead().insertRow();
-  ['Dzień',...ids.map(i=>schedule.people[i].name)].forEach(s=>head.append(element('th',s)));
-  const body=table.createTBody();
-  for(let d=0;d<schedule.days;d++){
-    const row=body.insertRow();row.append(element('th',dayText(d)));
-    for(const i of ids){const shift=schedule.people[i].shifts[d],td=row.insertCell();td.textContent=shift.text;td.classList.toggle('off',shift.off)}
-  }
-}
 let font;
 async function loadFont(){
   if(font)return font;
@@ -68,30 +65,111 @@ el('download').onclick=async()=>{
   const button=el('download'),version=revision;button.disabled=true;
   try{
     const typeface=await loadFont();if(version!==revision||owner===null)return;
-    const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4',compress:true});
+    const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4',orientation:view==='grid'?'landscape':'portrait',compress:true});
     doc.addFileToVFS('sans.ttf',typeface);doc.addFont('sans.ttf','Grafik','normal');doc.setFont('Grafik');
-    const companions=chosen().slice(1),pages=Math.max(1,Math.ceil(companions.length/3));
-    for(let page=0;page<pages;page++){
-      if(page)doc.addPage();
-      const ids=[owner,...companions.slice(page*3,page*3+3)],cw=160/ids.length;
-      doc.setTextColor('#345f55');doc.setFontSize(9);doc.text('GRAFIK PRACY',12,15);
-      doc.setFontSize(22);doc.setTextColor('#172d2a');doc.text(title(),12,26);
-      doc.setFontSize(9);doc.text((page+1)+' / '+pages,197,24,{align:'right'});
-      doc.setFillColor('#21483e');doc.roundedRect(12,31,186,13,2,2,'F');
-      doc.setTextColor('#ffffff');doc.text('Dzień',15,39);
-      ids.forEach((id,j)=>{doc.setFontSize(8);doc.text(doc.splitTextToSize(schedule.people[id].name,cw-4),40+j*cw,37)});
-      for(let d=0;d<schedule.days;d++){
-        const y=44+d*7.55,weekend=[0,6].includes(dayDate(d).getDay());
-        doc.setFillColor(weekend?'#e6eeeb':d%2?'#f5f7f6':'#ffffff');doc.rect(12,y,186,7.55,'F');
-        doc.setFontSize(9);doc.setTextColor('#253c36');doc.text(dayText(d),15,y+5);
-        ids.forEach((id,j)=>{
-          const shift=schedule.people[id].shifts[d];doc.setTextColor(shift.off?'#63756e':j?'#202e2a':'#085742');
-          doc.setFontSize(9);const width=doc.getTextWidth(shift.text);if(width>cw-4)doc.setFontSize(9*(cw-4)/width);
-          doc.text(shift.text,40+j*cw,y+5);
-        });
-      }
-      doc.setFontSize(8);doc.setTextColor('#546861');doc.text('(+1)  koniec zmiany następnego dnia',12,286);
-    }
-    doc.save('grafik-'+schedule.year+'-'+String(schedule.month).padStart(2,'0')+'.pdf');
+    exportPages(doc);
+    doc.save('grafik-'+(view==='grid'?'tabela-':'os-czasu-')+schedule.year+'-'+String(schedule.month).padStart(2,'0')+'.pdf');
   }catch{el('status').textContent='Nie udało się wygenerować PDF-u. Spróbuj ponownie.'}finally{button.disabled=false}
 };
+let view='grid',period=0;
+const groups=()=>[['Zespół',chosen().filter(i=>!schedule.people[i].manager)],['Kierownicy i zastępcy',chosen().filter(i=>schedule.people[i].manager)]].filter(([,ids])=>ids.length);
+function personName(i){
+ const words=schedule.people[i].name.toLocaleLowerCase('pl').split(/\s+/);
+ return [...words.slice(1),words[0]].map(w=>w.replace(/(^|-)(\p{L})/gu,(_,p,c)=>p+c.toLocaleUpperCase('pl'))).join(' ')+(i===owner?' · Ty':'');
+}
+const palette={morning:'#b7e2ff',late:'#ffe492',night:'#d8d0fa',off:'#edf0f3',other:'#edf0f3'};
+function shiftInfo(i,d){
+ const s=schedule.people[i].shifts[d],m=s.text.match(/^(\d\d?):(\d\d)–(\d\d?):(\d\d)/);
+ if(!m)return {...s,kind:s.off?'off':'other'};
+ const start=Number(m[1])+Number(m[2])/60,end=Number(m[3])+Number(m[4])/60;
+ return {...s,start,end:end<start?end+24:end,kind:end<start?'night':start<12?'morning':'late'};
+}
+function scale(d){
+ const shifts=chosen().map(i=>shiftInfo(i,d)).filter(v=>v.start!==undefined);
+ const start=Math.floor(Math.min(6,...shifts.map(v=>v.start))/2)*2;
+ const end=Math.ceil(Math.max(22,...shifts.map(v=>v.end))/2)*2;
+ const ticks=[start];for(let h=start+4;h<=end;h+=4)ticks.push(h);
+ if(ticks.at(-1)!==end)ticks.push(end);
+ return {start,end,ticks,pos:h=>(h-start)/(end-start)};
+}
+const tick=h=>String(h%24).padStart(2,'0')+(h>=24?'+1':'');
+const weekDays=w=>Array.from({length:Math.min(7,schedule.days-w*7)},(_,i)=>w*7+i);
+function preview(){
+ const grid=view==='grid',count=grid?Math.ceil(schedule.days/7):schedule.days;
+ el('grid').setAttribute('aria-pressed',String(grid));el('axis').setAttribute('aria-pressed',String(!grid));
+ el('month').textContent=title();const select=el('period');select.replaceChildren();
+ for(let i=0;i<count;i++){const dates=grid?weekDays(i):[i];select.add(new Option(grid?dayText(dates[0])+' – '+dayText(dates.at(-1)):dayText(i),i))}
+ select.value=period;
+ const sheet=el('sheet');sheet.replaceChildren();
+ if(grid){
+  const days=weekDays(period),table=element('table',''),head=table.createTHead().insertRow();
+  for(const text of ['Osoba',...days.map(dayText)])head.append(element('th',text));
+  for(const [group,ids] of groups()){
+   const body=table.createTBody(),row=body.insertRow(),label=element('th',group);label.colSpan=days.length+1;row.className='group';row.append(label);
+   for(const i of ids){const r=body.insertRow();r.append(element('th',personName(i)));
+    for(const d of days){const s=shiftInfo(i,d),badge=element('span',s.text);badge.className='shift '+s.kind;r.insertCell().append(badge)}}
+  }sheet.append(table);
+ }else{
+  const panel=element('div',''),sc=scale(period),ticks=element('div','');panel.className='timeline';ticks.className='ticks';
+  for(const h of sc.ticks){const label=element('span',tick(h));label.style.left=sc.pos(h)*100+'%';ticks.append(label)}panel.append(ticks);
+  for(const [group,ids] of groups()){
+   const header=element('h3',group);header.className='sectionname';panel.append(header);
+   for(const i of ids){const s=shiftInfo(i,period),row=element('div',''),name=element('strong',personName(i)),track=element('div','');
+    row.className='lane';track.className='track';track.style.setProperty('--step',400/(sc.end-sc.start)+'%');name.append(element('small',s.text));
+    if(s.start!==undefined){const bar=element('span','');bar.className='bar '+s.kind;bar.style.left=sc.pos(s.start)*100+'%';bar.style.width=(sc.pos(s.end)-sc.pos(s.start))*100+'%';track.append(bar)}
+    row.append(name,track);panel.append(row);
+   }
+  }sheet.append(panel);
+ }
+}
+for(const mode of ['grid','axis'])el(mode).onclick=()=>{if(view===mode)return;period=mode==='axis'?period*7:Math.floor(period/7);view=mode;preview()};
+el('period').onchange=()=>{period=Number(el('period').value);preview()};
+function exportPages(doc){
+ const grid=view==='grid',width=doc.internal.pageSize.getWidth(),height=doc.internal.pageSize.getHeight();
+ let pages=0;
+ function text(value,x,y,size=10,color='#182d46',max=Infinity){
+  doc.setFontSize(size);doc.setFontSize(size*Math.min(1,max/Math.max(.1,doc.getTextWidth(value))));doc.setTextColor(color);doc.text(value,x,y);
+ }
+ function header(label){
+  if(pages++)doc.addPage();
+  text(grid?'Tabela':'Oś czasu',12,17,22);text(title()+'   /   '+label,12,25,11);
+  let x=12;
+  for(const [kind,label] of [['morning','Rano'],['late','Popołudnie'],['night','Noc'],['off','Wolne']]){
+   doc.setFillColor(palette[kind]);doc.circle(x+1,32,1.8,'F');text(label,x+5,33,9);x+=doc.getTextWidth(label)+13;
+  }
+  text('(+1)  następny dzień',12,height-6,8);text(String(pages),width-17,height-6,8);
+ }
+ const count=grid?Math.ceil(schedule.days/7):schedule.days;
+ for(let period=0;period<count;period++){
+  const days=grid?weekDays(period):[period],sc=grid?null:scale(period);
+  const nameEnd=grid?63:65,span=width-nameEnd-13,cw=span/days.length;
+  function startPage(){
+   header(grid?dayText(days[0])+' – '+dayText(days.at(-1)):dayText(period));
+   if(grid)days.forEach((d,j)=>text(dayText(d),nameEnd+j*cw+1,43,9));
+   else sc.ticks.forEach(h=>text(tick(h),nameEnd+sc.pos(h)*span-2,43,8));
+   return 47;
+  }
+  let y=startPage();
+  function groupLabel(label){
+   doc.setFillColor('#edf3f8');doc.rect(12,y,width-24,6,'F');text(label,14,y+4.3,9);y+=7;
+  }
+  for(const [group,ids] of groups()){
+   if(y+16>height-13)y=startPage();groupLabel(group);
+   for(const i of ids){
+    const rh=grid?6.5:10;
+    if(y+rh>height-13){y=startPage();groupLabel(group)}
+    text(personName(i),13,y+4.5,9,'#182d46',nameEnd-15);
+    if(grid)days.forEach((d,j)=>{
+     const s=shiftInfo(i,d),x=nameEnd+j*cw;
+     doc.setFillColor(palette[s.kind]);doc.roundedRect(x,y,cw-1,5.9,1.2,1.2,'F');text(s.text,x+1.5,y+4.6,9,'#152c41',cw-4);
+    });
+    else{
+     const s=shiftInfo(i,period);text(s.text,13,y+8,8,'#445976',nameEnd-15);
+     doc.setDrawColor('#d4dce4');sc.ticks.forEach(h=>{const x=nameEnd+span*sc.pos(h);doc.line(x,y,x,y+rh)});
+     if(s.start!==undefined){doc.setFillColor(palette[s.kind]);doc.rect(nameEnd+span*sc.pos(s.start),y+2,(sc.pos(s.end)-sc.pos(s.start))*span,5,'F')}
+    }
+    y+=rh;
+   }
+  }
+ }
+}
