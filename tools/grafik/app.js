@@ -68,7 +68,7 @@ el('people-search').oninput=filterSearch;
 el('select-all').onclick=()=>selectPeople(schedule.people.map((_,i)=>i));
 el('select-none').onclick=()=>selectPeople([]);
 el('select-managers').onclick=()=>selectPeople(schedule.people.flatMap((p,i)=>p.manager?[i]:[]));
-el('apply-people').onclick=()=>{if(owner!==null){el('people-settings').open=false;el('viewbar').scrollIntoView({block:'start',behavior:'smooth'})}};
+el('apply-people').onclick=()=>{if(owner!==null){el('people-settings').open=false;el('viewbar').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}};
 el('me').onchange=()=>{
  const val=el('me').value,prior=owner;owner=val===''?null:Number(val);
  if(owner!==null){if(prior===null)selected=new Set(schedule.people.map((_,i)=>i).filter(i=>i!==owner));else{selected.add(prior);selected.delete(owner)}}
@@ -87,7 +87,7 @@ async function loadFont(){
 el('download').onclick=async()=>{
   const button=el('download'),version=revision;button.disabled=true;
   try{
-    const typeface=await loadFont();if(version!==revision||owner===null)return;
+    const typeface=await loadFont();if(version!==revision||!schedule||owner===null||owner===undefined)return;
     const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4',orientation:'landscape',compress:true});
     doc.addFileToVFS('sans.ttf',typeface);doc.addFont('sans.ttf','Grafik','normal');doc.setFont('Grafik');
     const mode=el('export-mode').value;exportPages(doc,mode);
@@ -235,7 +235,7 @@ function install(data,chosenOwner=null,savedSelection=null){schedule=data;owner=
  const me=el('me');me.replaceChildren(new Option('Wybierz siebie',''));data.people.forEach((p,i)=>me.add(new Option(p.label,i)));el('others').replaceChildren();el('filter-picker').hidden=true;
  const managerList=el('managers');managerList.replaceChildren();data.people.forEach((p,i)=>{const label=element('label',''),box=document.createElement('input');box.type='checkbox';box.checked=!!p.manager;box.onchange=()=>{p.manager=box.checked;if(owner!==null){renderPeople();refreshView()}};label.append(box,p.label);managerList.append(label)});
  el('daily-date').replaceChildren(...monthDays().map(d=>new Option(fullDay(d),d)));dayIndex=dateIndex(0);if(dayIndex<0)dayIndex=dateIndex(1);if(dayIndex<0)dayIndex=0;el('daily-date').value=dayIndex;
- el('picker').hidden=false;el('status').textContent=title()+' · Osoby w grafiku: '+data.people.length;
+ el('picker').hidden=false;filterCount();el('status').textContent=title()+' · Osoby w grafiku: '+data.people.length;
  if(Number.isInteger(chosenOwner)&&chosenOwner>=0&&chosenOwner<data.people.length){me.value=String(chosenOwner);me.onchange();if(Array.isArray(savedSelection))selectPeople(savedSelection.filter(i=>Number.isInteger(i)&&i>=0&&i<data.people.length));el('people-settings').open=false}else refreshView();syncVault();if(schedule)el('vault-details').open=false;touch();
 }
 function mins(v){const h=Math.floor(v/60),m=v%60;return (h? h+' godz. ':'')+(m?m+' min':h?'':'0 min')}
@@ -244,15 +244,21 @@ function intervals(i,d){const a=[];for(const shiftDay of [d-1,d,d+1]){if(shiftDa
 function card(label,sub){const div=element('div','');div.className='prism-shift';div.append(element('strong',label),element('small',sub));return div}
 function renderDaily(){if(!schedule||owner===null||owner===undefined)return;const d=dayIndex,mine=shiftInfo(owner,d),summary=el('day-summary'),team=el('day-team');summary.replaceChildren();team.replaceChildren();const main=element('div','');main.className='day-main';const date=element('div',fullDay(d));date.className='day-date';const shift=element('strong',mine.text);shift.className='day-time';main.append(date,shift);summary.append(main);el('day-prev').disabled=d===0;el('day-next').disabled=d===schedule.days-1;
  el('today').disabled=dateIndex(0)<0;el('tomorrow').disabled=dateIndex(1)<0;
- if(mine.start===undefined||mine.end<=mine.start){team.append(element('p','Brak godzin Twojej zmiany w grafiku na ten dzień.'));return}
+ function otherShifts(excluded=new Set()){
+ const ids=chosen().filter(i=>i!==owner&&!excluded.has(i));
+ if(!ids.length)return;
+ team.append(element('h3',excluded.size?'Pozostałe wybrane osoby':'Wybrane osoby w tym dniu'));
+ for(const i of ids){const shift=shiftInfo(i,d),row=element('div',''),name=element('span',schedule.people[i].label+(schedule.people[i].manager?' · K':'')),badge=element('span',shift.text);row.className='personline';badge.className='shift '+shift.kind;row.append(name,badge);team.append(row)}
+}
+ if(mine.start===undefined||mine.end<=mine.start){team.append(element('p','Brak godzin Twojej zmiany w grafiku na ten dzień.'));otherShifts();return}
  const a=mine.start,b=mine.end;const duration=element('span','Czas zmiany: '+mins(Math.round((b-a)*60))+' (bez odliczania przerw)');duration.className='hint';main.append(duration);
- const rows=chosen().flatMap(i=>{if(i===owner)return [];const p=schedule.people[i];return intervals(i,d).map(([x,y])=>({p,x,y,start:Math.max(a,x),end:Math.min(b,y)})).filter(r=>r.end>r.start)}).sort((x,y)=>x.start-y.start||y.end-x.end);
+ const rows=chosen().flatMap(i=>{if(i===owner)return [];const p=schedule.people[i];return intervals(i,d).map(([x,y])=>({i,p,x,y,start:Math.max(a,x),end:Math.min(b,y)})).filter(r=>r.end>r.start)}).sort((x,y)=>x.start-y.start||y.end-x.end);
  const mgr=rows.filter(r=>r.p.manager),other=rows.filter(r=>!r.p.manager);
  const roleKnown=schedule.people.some(p=>p.manager);team.append(element('h3','Wybrani kierownicy na Twojej zmianie'));
  if(!roleKnown)team.append(element('p','Najpierw oznacz kierowników w ustawieniach grafiku.'));else if(!mgr.length)team.append(element('p','Brak pokrywających się zmian wybranych kierowników.'));
  let covered=a;for(const r of mgr){if(r.start>covered)break;covered=Math.max(covered,r.end)}if(roleKnown&&mgr.length)team.append(element('p',covered>=b?'Pokrycie całej Twojej zmiany przez wybranych kierowników.':'Niepełne pokrycie Twojej zmiany przez wybranych kierowników.'));
  function row(r){const div=card(r.p.label,time(r.x<0?r.x+24:r.x)+' – '+time(r.y<0?r.y+24:r.y));const overlap=element('span','Razem: '+mins(Math.round((r.end-r.start)*60)));overlap.className='overlap-text';div.append(overlap);const track=element('div',''),bar=element('span','');track.className='prism-overlap';bar.style.left=(r.start-a)/(b-a)*100+'%';bar.style.width=(r.end-r.start)/(b-a)*100+'%';track.append(bar);div.append(track);return div}
- mgr.forEach(r=>team.append(row(r)));team.append(element('h3','Z kim pracujesz?'));if(!other.length)team.append(element('p','Brak pokrywających się zmian wybranych osób.'));other.forEach(r=>team.append(row(r)));
+ mgr.forEach(r=>team.append(row(r)));team.append(element('h3','Z kim pracujesz?'));if(!other.length)team.append(element('p','Brak pokrywających się zmian wybranych osób.'));other.forEach(r=>team.append(row(r)));otherShifts(new Set(rows.map(r=>r.i)));
  if((d===0&&a<12)||(d===schedule.days-1&&b>24))team.append(element('small','Na granicy miesiąca poprzedni lub kolejny grafik może zawierać dodatkowe zmiany.'));
 }
 function setDay(d){if(!schedule||!Number.isInteger(d)||d<0||d>=schedule.days)return;dayIndex=d;el('daily-date').value=d;refreshView()}
