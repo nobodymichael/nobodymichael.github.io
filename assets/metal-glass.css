@@ -42,3 +42,58 @@ body[data-app=nobody] .widget-board .tool-widget::after{content:"";position:abso
 @media(prefers-reduced-motion:reduce){.prism-launch[data-kind=grafik] img{animation:none!important}}
 .prism-dial i[hidden]{display:none}
 }
+
+/* PAPER — flat, neutral surfaces; colour reserved for meaning. */
+@media screen{
+:root{--paper:#f4f2ed;--black:#0a0a0a;--prism-accent:#a7a7a7;--glass-face:#141414;--glass-rim:none}
+html,body[data-app=nobody],body.pulse,html.tool-view .tool-page,body.roster,body.tool-page{background:#0a0a0a;color:#f4f2ed;background-attachment:initial}
+body[data-app=nobody]{--green:#f4f2ed;--line:#333;--ink:#f4f2ed;--muted:#a9a9a5}
+body[data-app=nobody] .nav{border-color:#303030}
+.widget-home{max-width:980px;margin-top:clamp(35px,8vw,95px)}
+.widget-home h1{font-size:clamp(43px,9vw,100px);font-weight:760;letter-spacing:-.055em;color:#f4f2ed}
+.prism-version{color:#999;letter-spacing:.18em;margin:10px 0 34px}
+.widget-board{gap:1px;background:#393939;border:1px solid #393939;grid-template-columns:repeat(2,minmax(0,1fr));border-radius:0}
+.widget-board .tool-widget,.widget-board .tool-widget:is(:hover,:focus-visible){background:#111;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;transform:none;min-height:clamp(150px,18vw,208px)}
+.widget-board .tool-widget:hover{background:#1b1b1b}
+body[data-app=nobody] .widget-board .tool-widget::after{display:none}
+.widget-board .widget-symbol{filter:none;opacity:1;width:42px;height:42px}
+.widget-board .widget-caption h2{color:#f4f2ed;font-size:clamp(20px,3vw,30px)}
+.widget-board .widget-caption p{color:#aaa}
+.widget-board .widget-open{border:0;background:none;color:#aaa}
+body[data-app=nobody] .button,.carbon-dialog .carbon-copy,.carbon-dialog .carbon-networks button[aria-pressed=true]{background:#f4f2ed;color:#111;border:1px solid #f4f2ed;border-radius:6px;box-shadow:none}
+body[data-app=nobody] dialog,.carbon-dialog,.carbon-wallet{background:#161616;color:#f4f2ed;border:1px solid #3c3c3c;border-radius:8px;box-shadow:none}
+body[data-app=nobody] .footer{border-color:#333}
+.pulse{--mint:#71caa2;--muted:#a7a7a3;--edge:#333}
+.pulse .panel,.pulse .panel:not(.ratio),.pulse .panel.ratio,.pulse .cards .asset,.pulse .asset,.tool-page .panel,.tool-view .tool-page .panel,.roster main>section{background:#151515;color:#f4f2ed;border:1px solid #343434;border-radius:8px;box-shadow:none}
+.pulse .ratio .ratio-number{background:none;color:#f4f2ed;-webkit-text-fill-color:currentColor}
+.pulse .ratio-bar{height:3px;background:linear-gradient(90deg,#c7a466,#b9bbc0)}
+.pulse .coin{background:#232323}
+.pulse .top #refresh,.pulse .fx>div{background:#161616;border-color:#333;border-radius:6px}
+.pulse .pulse-hero{min-height:115px}.pulse .pulse-hero h1{font-size:clamp(45px,7vw,74px)}
+.pulse .market-grid .panel{min-height:200px}
+.prism-dial::before{background:conic-gradient(from 270deg,#c96d68 0deg,#cda56c 55deg,#d3c080 90deg,#87ad88 135deg,#62ae90 180deg,transparent 180deg)}
+.prism-dial i{box-shadow:none}
+body[data-app=qrgen]{--tool-accent:#75b9cf;--detail:#75b9cf;--prism-accent:#75b9cf}
+body[data-app=exif]{--tool-accent:#b9a2d8;--detail:#b9a2d8;--prism-accent:#b9a2d8}
+.tool-view .tool-page .tool-title,.tool-page .tool-title{background:none;border:0;box-shadow:none}
+.tool-page .tool-orbit{display:none}
+.tool-page .nav{border-color:#333}
+.tool-view .tool-page :is(.button,.button:hover),.tool-page :is(.button,.button:hover){background:#f4f2ed;color:#111;border:1px solid #f4f2ed;border-radius:6px;box-shadow:none}
+.tool-view .tool-page :is(.format-tile,.mode-tile)[aria-pressed=true],.tool-page :is(.format-tile,.mode-tile)[aria-pressed=true]{background:#222;border-color:var(--prism-accent);box-shadow:none}
+.tool-page :is(input,textarea,select,.ghost,.format-tile,.mode-tile,.drop,.preview){border-radius:6px;box-shadow:none}
+.tool-page .local-pill i,.tool-page .status-dot{box-shadow:none}
+.roster :is(select,input[type=file],.views button),.roster #vault input[type=password]{background:#101010;color:#f4f2ed;border-color:#555;border-radius:6px}
+.roster button,.roster .views button[aria-pressed=true]{background:#f4f2ed;color:#111;border:1px solid #eee;border-radius:6px}
+.roster :is(table,thead th,tbody th,.group th,.sectionname,.daycard h3){background:#1a1a1a;color:#eee}
+.roster :is(.mine,.mine>td,.mine>th){background:#dedfd6;color:#111}
+.roster #day-summary .prism-shift,.roster .prism-shift{background:#1d1d1d;border:1px solid #444;color:#eee;border-radius:6px}
+.roster .prism-overlap{background:#353535}.roster .prism-overlap span{background:#b4a1d4;box-shadow:none}
+.roster #managers label:has(:checked),.roster #others label:has(:checked){background:#252525;border-color:#b4a1d4;color:#eee}
+.roster :is(#vault-note,#day-team p,.back,small,#status){color:#b4b4b4}
+.prism-launch{background:#0a0a0a;color:#f4f2ed;animation:prism-in .15s ease both!important}
+.prism-launch img{filter:none;width:min(24vw,105px);height:min(24vw,105px)}
+.prism-launch::after{display:none!important}.prism-launch small{color:#aaa}
+.prism-launch strong{font-size:clamp(24px,6vw,42px);letter-spacing:.06em}
+@media(max-width:700px){.widget-board{gap:1px}.widget-board .tool-widget{border-radius:0;min-height:145px}.widget-board .widget-symbol{width:37px;height:37px}}
+@media(prefers-reduced-motion:reduce){.prism-launch,.prism-launch *{animation:none!important}}
+}
