@@ -50,3 +50,22 @@
   .roster .mine small{color:#374455}
   .roster .legend i{border:1px solid #ffffff29}
 }
+@media screen {
+  .widget-board .widget-symbol{display:grid;place-items:center;filter:none;transform:none}
+  .widget-board .outline-art{display:block;width:100%;height:100%;object-fit:contain}
+  .widget-market .outline-art{max-width:48%;max-height:78%}
+  .widget-cut .outline-art{max-width:80%;max-height:88%}
+  h1 .page-emblem{height:.62em;width:.62em;display:inline-block;vertical-align:.025em;margin-right:.15em;object-fit:contain}
+  @media(max-width:700px){.widget-market .widget-symbol{inset:3% 0 14% 26%}}
+}
+@media screen {
+  /* Two narrow highlights meet at one corner and fade along its edges. */
+  :root body :is(button,.button,.tool-widget,.desk-nav a):not(:disabled){
+    background-image:
+      radial-gradient(ellipse 30px 2px at calc(100% - 5px) 100%,#ffedbf69,transparent),
+      radial-gradient(ellipse 2px 18px at 100% calc(100% - 4px),#e6e4db40,transparent),
+      var(--control-face,linear-gradient(transparent,transparent));
+  }
+  :root body .widget-board .tool-widget{--control-face:var(--glass-face)}
+  :root body .widget-board .widget-market{--control-face:radial-gradient(ellipse at 60% 28%,#d7bb8123,transparent 54%),var(--glass-face)}
+}
